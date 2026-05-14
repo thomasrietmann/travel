@@ -19,7 +19,7 @@
         <label for="priority" class="block text-sm font-medium text-slate-700">Prioritaet</label>
         <select id="priority" name="priority" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Task::PRIORITIES as $priority)
-                <option value="{{ $priority }}" @selected(old('priority', $task->priority ?? 'medium') === $priority)>{{ $priority }}</option>
+                <option value="{{ $priority }}" @selected(old('priority', $task->priority ?? 'medium') === $priority)>{{ Task::PRIORITY_LABELS[$priority] }}</option>
             @endforeach
         </select>
         @error('priority') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -29,7 +29,7 @@
         <label for="status" class="block text-sm font-medium text-slate-700">Status</label>
         <select id="status" name="status" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Task::STATUSES as $status)
-                <option value="{{ $status }}" @selected(old('status', $task->status ?? 'open') === $status)>{{ $status }}</option>
+                <option value="{{ $status }}" @selected(old('status', $task->status ?? 'open') === $status)>{{ Task::STATUS_LABELS[$status] }}</option>
             @endforeach
         </select>
         @error('status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror

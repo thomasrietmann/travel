@@ -13,7 +13,7 @@
         <label for="type" class="block text-sm font-medium text-slate-700">Typ</label>
         <select id="type" name="type" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Trip::TYPES as $type)
-                <option value="{{ $type }}" @selected(old('type', $trip->type) === $type)>{{ str_replace('_', ' ', $type) }}</option>
+                <option value="{{ $type }}" @selected(old('type', $trip->type) === $type)>{{ Trip::TYPE_LABELS[$type] }}</option>
             @endforeach
         </select>
         @error('type') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -23,7 +23,7 @@
         <label for="status" class="block text-sm font-medium text-slate-700">Status</label>
         <select id="status" name="status" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Trip::STATUSES as $status)
-                <option value="{{ $status }}" @selected(old('status', $trip->status) === $status)>{{ $status }}</option>
+                <option value="{{ $status }}" @selected(old('status', $trip->status) === $status)>{{ Trip::STATUS_LABELS[$status] }}</option>
             @endforeach
         </select>
         @error('status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror

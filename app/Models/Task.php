@@ -13,6 +13,15 @@ class Task extends Model
 
     public const PRIORITIES = ['low', 'medium', 'high'];
     public const STATUSES = ['open', 'done'];
+    public const PRIORITY_LABELS = [
+        'low' => 'Niedrig',
+        'medium' => 'Mittel',
+        'high' => 'Hoch',
+    ];
+    public const STATUS_LABELS = [
+        'open' => 'Offen',
+        'done' => 'Erledigt',
+    ];
 
     protected $fillable = [
         'trip_id',
@@ -33,5 +42,15 @@ class Task extends Model
     public function trip(): BelongsTo
     {
         return $this->belongsTo(Trip::class);
+    }
+
+    public function getPriorityLabelAttribute(): string
+    {
+        return self::PRIORITY_LABELS[$this->priority] ?? $this->priority;
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? $this->status;
     }
 }

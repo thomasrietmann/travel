@@ -16,6 +16,28 @@ class Booking extends Model
     public const CURRENCIES = ['CHF', 'EUR', 'USD', 'SEK', 'NOK'];
     public const BOOKING_STATUSES = ['open', 'requested', 'confirmed', 'cancelled'];
     public const PAYMENT_STATUSES = ['unpaid', 'partially_paid', 'paid'];
+    public const CATEGORY_LABELS = [
+        'flight' => 'Flug',
+        'hotel' => 'Hotel',
+        'camper' => 'Camper',
+        'car' => 'Auto',
+        'ticket' => 'Ticket',
+        'transport' => 'Transport',
+        'activity' => 'Aktivität',
+        'insurance' => 'Versicherung',
+        'other' => 'Sonstiges',
+    ];
+    public const BOOKING_STATUS_LABELS = [
+        'open' => 'Offen',
+        'requested' => 'Angefragt',
+        'confirmed' => 'Bestätigt',
+        'cancelled' => 'Storniert',
+    ];
+    public const PAYMENT_STATUS_LABELS = [
+        'unpaid' => 'Unbezahlt',
+        'partially_paid' => 'Teilweise bezahlt',
+        'paid' => 'Bezahlt',
+    ];
 
     protected $fillable = [
         'trip_id',
@@ -49,5 +71,20 @@ class Booking extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
+    }
+
+    public function getCategoryLabelAttribute(): string
+    {
+        return self::CATEGORY_LABELS[$this->category] ?? $this->category;
+    }
+
+    public function getBookingStatusLabelAttribute(): string
+    {
+        return self::BOOKING_STATUS_LABELS[$this->booking_status] ?? $this->booking_status;
+    }
+
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return self::PAYMENT_STATUS_LABELS[$this->payment_status] ?? $this->payment_status;
     }
 }

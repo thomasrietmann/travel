@@ -41,8 +41,8 @@
                     </div>
 
                     <div class="mt-4 flex flex-wrap gap-2 text-xs font-medium">
-                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ str_replace('_', ' ', $trip->type) }}</span>
-                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->status }}</span>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->type_label }}</span>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->status_label }}</span>
                     </div>
 
                     <dl class="mt-5 grid grid-cols-2 gap-4 text-sm">

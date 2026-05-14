@@ -26,6 +26,10 @@
                     - {{ $trip->end_date->format('d.m.Y') }}
                 @endif
             </p>
+            <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->type_label }}</span>
+                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->status_label }}</span>
+            </div>
         </div>
 
         <div class="flex gap-2">
@@ -94,10 +98,10 @@
                         <tr>
                             <td class="px-5 py-4">
                                 <div class="font-medium text-slate-950">{{ $booking->title }}</div>
-                                <div class="text-slate-500">{{ $booking->provider ?: $booking->category }}</div>
+                                <div class="text-slate-500">{{ $booking->provider ?: $booking->category_label }}</div>
                             </td>
-                            <td class="px-5 py-4">{{ $booking->booking_status }}</td>
-                            <td class="px-5 py-4">{{ $booking->payment_status }}</td>
+                            <td class="px-5 py-4">{{ $booking->booking_status_label }}</td>
+                            <td class="px-5 py-4">{{ $booking->payment_status_label }}</td>
                             <td class="px-5 py-4">{{ number_format((float) $booking->amount, 2) }} {{ $booking->currency }}</td>
                             <td class="px-5 py-4">{{ $booking->due_date?->format('d.m.Y') ?? '-' }}</td>
                             <td class="px-5 py-4 text-right">
@@ -140,7 +144,7 @@
                 <div class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <p class="font-medium text-slate-950">{{ $task->title }}</p>
-                        <p class="mt-1 text-sm text-slate-500">{{ $task->priority }} - {{ $task->status }} - {{ $task->due_date?->format('d.m.Y') ?? 'ohne Deadline' }}</p>
+                        <p class="mt-1 text-sm text-slate-500">{{ $task->priority_label }} - {{ $task->status_label }} - {{ $task->due_date?->format('d.m.Y') ?? 'ohne Deadline' }}</p>
                     </div>
                     <a href="{{ route('tasks.edit', $task) }}" class="text-sm font-medium text-slate-700 hover:text-slate-950">Bearbeiten</a>
                 </div>
@@ -160,7 +164,7 @@
                 <div class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <a href="{{ asset('storage/'.$document->file_path) }}" target="_blank" class="font-medium text-slate-950 hover:underline">{{ $document->title }}</a>
-                        <p class="mt-1 text-sm text-slate-500">{{ $document->document_type }}@if ($document->booking) - {{ $document->booking->title }} @endif</p>
+                        <p class="mt-1 text-sm text-slate-500">{{ $document->document_type_label }}@if ($document->booking) - {{ $document->booking->title }} @endif</p>
                     </div>
                     <a href="{{ route('documents.edit', $document) }}" class="text-sm font-medium text-slate-700 hover:text-slate-950">Bearbeiten</a>
                 </div>

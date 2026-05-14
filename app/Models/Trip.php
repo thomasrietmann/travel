@@ -15,6 +15,20 @@ class Trip extends Model
 
     public const TYPES = ['family_camper', 'coastertrip', 'roadtrip', 'citytrip', 'other'];
     public const STATUSES = ['idea', 'planned', 'booked', 'ready', 'completed'];
+    public const TYPE_LABELS = [
+        'family_camper' => 'Familien-Camperreise',
+        'coastertrip' => 'Achterbahnreise',
+        'roadtrip' => 'Rundreise',
+        'citytrip' => 'Städtereise',
+        'other' => 'Sonstiges',
+    ];
+    public const STATUS_LABELS = [
+        'idea' => 'Idee',
+        'planned' => 'Geplant',
+        'booked' => 'Gebucht',
+        'ready' => 'Bereit',
+        'completed' => 'Abgeschlossen',
+    ];
 
     protected $fillable = [
         'user_id',
@@ -134,5 +148,15 @@ class Trip extends Model
         }
 
         return 'green';
+    }
+
+    public function getTypeLabelAttribute(): string
+    {
+        return self::TYPE_LABELS[$this->type] ?? $this->type;
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return self::STATUS_LABELS[$this->status] ?? $this->status;
     }
 }

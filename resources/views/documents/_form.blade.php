@@ -13,7 +13,7 @@
         <label for="document_type" class="block text-sm font-medium text-slate-700">Dokumenttyp</label>
         <select id="document_type" name="document_type" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Document::TYPES as $type)
-                <option value="{{ $type }}" @selected(old('document_type', $document->document_type ?? 'other') === $type)>{{ $type }}</option>
+                <option value="{{ $type }}" @selected(old('document_type', $document->document_type ?? 'other') === $type)>{{ Document::TYPE_LABELS[$type] }}</option>
             @endforeach
         </select>
         @error('document_type') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror

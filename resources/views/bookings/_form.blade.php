@@ -7,7 +7,7 @@
         <label for="category" class="block text-sm font-medium text-slate-700">Kategorie</label>
         <select id="category" name="category" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Booking::CATEGORIES as $category)
-                <option value="{{ $category }}" @selected(old('category', $booking->category) === $category)>{{ $category }}</option>
+                <option value="{{ $category }}" @selected(old('category', $booking->category) === $category)>{{ Booking::CATEGORY_LABELS[$category] }}</option>
             @endforeach
         </select>
         @error('category') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -51,7 +51,7 @@
         <label for="booking_status" class="block text-sm font-medium text-slate-700">Buchungsstatus</label>
         <select id="booking_status" name="booking_status" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Booking::BOOKING_STATUSES as $status)
-                <option value="{{ $status }}" @selected(old('booking_status', $booking->booking_status) === $status)>{{ $status }}</option>
+                <option value="{{ $status }}" @selected(old('booking_status', $booking->booking_status) === $status)>{{ Booking::BOOKING_STATUS_LABELS[$status] }}</option>
             @endforeach
         </select>
         @error('booking_status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -61,7 +61,7 @@
         <label for="payment_status" class="block text-sm font-medium text-slate-700">Zahlungsstatus</label>
         <select id="payment_status" name="payment_status" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Booking::PAYMENT_STATUSES as $status)
-                <option value="{{ $status }}" @selected(old('payment_status', $booking->payment_status) === $status)>{{ $status }}</option>
+                <option value="{{ $status }}" @selected(old('payment_status', $booking->payment_status) === $status)>{{ Booking::PAYMENT_STATUS_LABELS[$status] }}</option>
             @endforeach
         </select>
         @error('payment_status') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror

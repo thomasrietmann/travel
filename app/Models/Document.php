@@ -12,6 +12,14 @@ class Document extends Model
     use HasFactory;
 
     public const TYPES = ['ticket', 'confirmation', 'invoice', 'passport', 'insurance', 'other'];
+    public const TYPE_LABELS = [
+        'ticket' => 'Ticket',
+        'confirmation' => 'Bestätigung',
+        'invoice' => 'Rechnung',
+        'passport' => 'Pass',
+        'insurance' => 'Versicherung',
+        'other' => 'Sonstiges',
+    ];
 
     protected $fillable = [
         'trip_id',
@@ -30,5 +38,10 @@ class Document extends Model
     public function booking(): BelongsTo
     {
         return $this->belongsTo(Booking::class);
+    }
+
+    public function getDocumentTypeLabelAttribute(): string
+    {
+        return self::TYPE_LABELS[$this->document_type] ?? $this->document_type;
     }
 }
