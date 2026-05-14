@@ -96,6 +96,8 @@ Im Projektverzeichnis:
 /opt/php83/bin/php -d memory_limit=2048M /bin/composer install --no-dev --optimize-autoloader
 ```
 
+Beim ersten Deployment kann Composer melden, dass noch kein `composer.lock` vorhanden ist und deshalb ein Update statt eines reinen Installs ausgefuehrt wird. Das ist fuer die Initialinstallation ok. Nach erfolgreicher Installation legt Composer ein `composer.lock` auf dem Server an.
+
 Falls `/bin/composer` nicht funktioniert, pruefen:
 
 ```bash

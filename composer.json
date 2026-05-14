@@ -4,8 +4,7 @@
     "description": "TripControl - personal travel overview app.",
     "require": {
         "php": "^8.3",
-        "laravel/framework": "^13.0",
-        "laravel/tinker": "^2.10"
+        "laravel/framework": "^13.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.24",
