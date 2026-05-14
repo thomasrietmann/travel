@@ -25,8 +25,11 @@
                     ][$trip->traffic_light];
                     $paidByCurrency = $trip->bookings->where('payment_status', 'paid')->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
                     $openByCurrency = $trip->bookings->whereIn('payment_status', ['unpaid', 'partially_paid'])->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
+                    $cardClass = $trip->is_past
+                        ? 'border-slate-200 bg-slate-100 opacity-70 hover:opacity-85'
+                        : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-md';
                 @endphp
-                <a href="{{ route('trips.show', $trip) }}" class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                <a href="{{ route('trips.show', $trip) }}" class="rounded-lg border p-5 shadow-sm transition {{ $cardClass }}">
                     <div class="flex items-start justify-between gap-4">
                         <div>
                             <h2 class="text-lg font-semibold text-slate-950">{{ $trip->title }}</h2>
@@ -53,6 +56,10 @@
                         <div>
                             <dt class="text-slate-500">Tasks offen</dt>
                             <dd class="font-semibold">{{ $trip->open_tasks_count }}</dd>
+                        </div>
+                        <div>
+                            <dt class="text-slate-500">Bis zum Start</dt>
+                            <dd class="font-semibold">{{ $trip->starts_in_label }}</dd>
                         </div>
                         <div>
                             <dt class="text-slate-500">Bezahlt</dt>

@@ -159,4 +159,30 @@ class Trip extends Model
     {
         return self::STATUS_LABELS[$this->status] ?? $this->status;
     }
+
+    public function getIsPastAttribute(): bool
+    {
+        return $this->end_date?->isBefore(today())
+            ?? $this->start_date?->isBefore(today())
+            ?? false;
+    }
+
+    public function getStartsInLabelAttribute(): string
+    {
+        if (! $this->start_date) {
+            return 'Kein Startdatum';
+        }
+
+        if ($this->is_past) {
+            return 'Bereits durchgeführt';
+        }
+
+        $days = (int) today()->diffInDays($this->start_date, false);
+
+        return match (true) {
+            $days === 0 => 'Startet heute',
+            $days === 1 => 'Startet morgen',
+            default => "Noch {$days} Tage",
+        };
+    }
 }
