@@ -268,6 +268,26 @@ Haefige Ursachen:
 - Document Root zeigt nicht auf `public`
 - PHP-Version ist nicht 8.3+
 
+### `tempnam(): file created in the system's temporary directory`
+
+Laravel kann kompilierte Blade-Views nicht in `storage/framework/views` schreiben. Die benoetigten Verzeichnisse muessen existieren und fuer den Webserver-Benutzer beschreibbar sein:
+
+```bash
+cd ~/travel.git
+mkdir -p storage/framework/views storage/framework/cache/data storage/framework/sessions bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+/opt/php83/bin/php artisan optimize:clear
+/opt/php83/bin/php artisan view:clear
+```
+
+Falls der Fehler danach weiter besteht, pruefen:
+
+```bash
+ls -ld storage storage/framework storage/framework/views bootstrap/cache
+```
+
+Alle genannten Verzeichnisse muessen dem Hosting-Benutzer gehoeren und Schreibrechte haben.
+
 ### Composer meldet falsche PHP-Version
 
 Composer explizit mit PHP 8.3 starten:
