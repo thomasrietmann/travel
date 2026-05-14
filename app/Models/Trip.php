@@ -16,7 +16,7 @@ class Trip extends Model
     public const TYPES = ['family_camper', 'coastertrip', 'roadtrip', 'citytrip', 'other'];
     public const STATUSES = ['idea', 'planned', 'booked', 'ready', 'completed'];
     public const TYPE_LABELS = [
-        'family_camper' => 'Familien-Camperreise',
+        'family_camper' => 'Familienferien',
         'coastertrip' => 'Achterbahnreise',
         'roadtrip' => 'Rundreise',
         'citytrip' => 'Städtereise',
