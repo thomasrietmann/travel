@@ -7,7 +7,9 @@ use App\Models\Document;
 use App\Models\Trip;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
@@ -48,6 +50,22 @@ class DocumentController extends Controller
             'trip' => $document->trip->load('bookings'),
             'document' => $document,
         ]);
+    }
+
+    public function download(Document $document): StreamedResponse
+    {
+        $this->authorize('view', $document);
+
+        abort_unless(Storage::disk('public')->exists($document->file_path), 404);
+
+        $extension = pathinfo($document->file_path, PATHINFO_EXTENSION);
+        $fileName = Str::slug($document->title) ?: pathinfo($document->file_path, PATHINFO_FILENAME);
+
+        if ($extension) {
+            $fileName .= ".{$extension}";
+        }
+
+        return Storage::disk('public')->download($document->file_path, $fileName);
     }
 
     public function update(DocumentRequest $request, Document $document): RedirectResponse

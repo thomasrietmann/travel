@@ -163,7 +163,7 @@
             @forelse ($trip->documents as $document)
                 <div class="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <a href="{{ asset('storage/'.$document->file_path) }}" target="_blank" class="font-medium text-slate-950 hover:underline">{{ $document->title }}</a>
+                        <a href="{{ route('documents.download', $document) }}" class="font-medium text-slate-950 hover:underline">{{ $document->title }}</a>
                         <p class="mt-1 text-sm text-slate-500">{{ $document->document_type_label }}@if ($document->booking) - {{ $document->booking->title }} @endif</p>
                     </div>
                     <a href="{{ route('documents.edit', $document) }}" class="text-sm font-medium text-slate-700 hover:text-slate-950">Bearbeiten</a>

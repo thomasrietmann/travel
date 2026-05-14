@@ -15,5 +15,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('trips', TripController::class);
     Route::resource('trips.bookings', BookingController::class)->shallow()->except(['show']);
     Route::resource('trips.tasks', TaskController::class)->shallow()->except(['show']);
+    Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
     Route::resource('trips.documents', DocumentController::class)->shallow()->except(['show']);
 });
