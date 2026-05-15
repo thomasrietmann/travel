@@ -35,6 +35,7 @@ class TripController extends Controller
             'bookings' => fn ($query) => $query
                 ->orderByRaw('start_date is null')
                 ->orderBy('start_date')
+                ->orderByRaw("case category when 'flight' then 0 when 'car' then 1 when 'hotel' then 2 else 3 end")
                 ->orderBy('title'),
             'bookings.documents',
             'tasks',
