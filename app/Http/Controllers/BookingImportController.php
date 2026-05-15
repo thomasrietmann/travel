@@ -9,6 +9,7 @@ use App\Models\Trip;
 use App\Services\BookingAiExtractor;
 use App\Services\TripSummaryGenerator;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Throwable;
@@ -21,8 +22,9 @@ class BookingImportController extends Controller
 
         $created = 0;
         $failed = [];
+        $files = $this->uploadedFiles($request->file('booking_documents', []));
 
-        foreach ($request->file('booking_documents', []) as $file) {
+        foreach ($files as $file) {
             try {
                 $extracted = $extractor->extract($trip, $file);
                 $validator = Validator::make($this->bookingData($extracted, $trip), $this->bookingRules());
@@ -66,6 +68,18 @@ class BookingImportController extends Controller
         return redirect()
             ->route('trips.show', $trip)
             ->with('status', $message);
+    }
+
+    /**
+     * @return array<int, UploadedFile>
+     */
+    private function uploadedFiles(array|UploadedFile|null $files): array
+    {
+        if ($files instanceof UploadedFile) {
+            return [$files];
+        }
+
+        return array_values(array_filter($files ?? [], fn ($file) => $file instanceof UploadedFile));
     }
 
     private function regenerateSummary(TripSummaryGenerator $summaryGenerator, Trip $trip): void

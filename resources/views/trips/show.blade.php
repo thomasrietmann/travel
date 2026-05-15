@@ -99,7 +99,7 @@
                     <span class="mt-1 text-sm text-slate-500">oder klicken und Dateien auswählen. Die AI erstellt pro Datei eine Buchung mit Dokumentanhang.</span>
                     <span data-booking-file-name class="mt-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"></span>
                 </label>
-                <input id="booking_documents" name="booking_documents[]" type="file" accept=".pdf,image/jpeg,image/png,image/webp" multiple class="sr-only" data-booking-file-input>
+                <input id="booking_documents" name="booking_documents[]" type="file" accept=".pdf,image/jpeg,image/png,image/webp" multiple="multiple" class="sr-only" data-booking-file-input>
                 @error('booking_documents') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                 @error('booking_documents.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                 <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -272,9 +272,11 @@
                     return;
                 }
 
+                const names = Array.from(input.files).map((file) => file.name);
+
                 fileName.textContent = input.files.length === 1
-                    ? input.files[0].name
-                    : `${input.files.length} Dateien ausgewählt`;
+                    ? names[0]
+                    : `${input.files.length} Dateien: ${names.slice(0, 3).join(', ')}${names.length > 3 ? ' ...' : ''}`;
                 fileName.classList.remove('hidden');
             };
 
@@ -299,7 +301,18 @@
                     return;
                 }
 
-                input.files = event.dataTransfer.files;
+                if (typeof DataTransfer === 'function') {
+                    const transfer = new DataTransfer();
+
+                    Array.from(event.dataTransfer.files).slice(0, 10).forEach((file) => {
+                        transfer.items.add(file);
+                    });
+
+                    input.files = transfer.files;
+                } else {
+                    input.files = event.dataTransfer.files;
+                }
+
                 showFile();
             });
         });
