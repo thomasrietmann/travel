@@ -5,7 +5,10 @@
 <div class="grid gap-5 md:grid-cols-2">
     <div>
         <label for="title" class="block text-sm font-medium text-slate-700">Titel</label>
-        <input id="title" name="title" value="{{ old('title', $document->title) }}" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+        <input id="title" name="title" value="{{ old('title', $document->title) }}" @required($document->exists) class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+        @unless ($document->exists)
+            <p class="mt-1 text-xs text-slate-500">Optional. Bei mehreren Dateien wird der Dateiname als Titel verwendet.</p>
+        @endunless
         @error('title') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
     </div>
 
@@ -31,12 +34,19 @@
     </div>
 
     <div>
-        <label for="file" class="block text-sm font-medium text-slate-700">Datei</label>
-        <input id="file" name="file" type="file" @required(! $document->exists) class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800">
+        <label for="{{ $document->exists ? 'file' : 'files' }}" class="block text-sm font-medium text-slate-700">{{ $document->exists ? 'Datei' : 'Dateien' }}</label>
+        @if ($document->exists)
+            <input id="file" name="file" type="file" class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800">
+        @else
+            <input id="files" name="files[]" type="file" multiple required class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800">
+            <p class="mt-1 text-xs text-slate-500">Bis zu 10 Dateien gleichzeitig, maximal 10 MB pro Datei.</p>
+        @endif
         @if ($document->exists)
             <p class="mt-1 text-xs text-slate-500">Leer lassen, um die bestehende Datei zu behalten.</p>
         @endif
         @error('file') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+        @error('files') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+        @error('files.*') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
     </div>
 
     <div class="md:col-span-2">

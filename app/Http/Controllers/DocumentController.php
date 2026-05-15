@@ -34,12 +34,24 @@ class DocumentController extends Controller
             'Die ausgewaehlte Buchung gehoert nicht zu dieser Reise.'
         );
 
-        $validated['file_path'] = $request->file('file')->store("documents/{$trip->id}", 'public');
-        unset($validated['file']);
+        $files = $request->file('files', []);
+        $uploaded = 0;
 
-        $trip->documents()->create($validated);
+        foreach ($files as $file) {
+            $trip->documents()->create([
+                'booking_id' => $validated['booking_id'] ?? null,
+                'title' => $this->documentTitle($validated['title'] ?? null, $file->getClientOriginalName(), count($files)),
+                'file_path' => $file->store("documents/{$trip->id}", 'public'),
+                'document_type' => $validated['document_type'],
+                'notes' => $validated['notes'] ?? null,
+            ]);
 
-        return redirect()->route('trips.show', $trip)->with('status', 'Dokument wurde hochgeladen.');
+            $uploaded++;
+        }
+
+        $message = $uploaded === 1 ? 'Dokument wurde hochgeladen.' : "{$uploaded} Dokumente wurden hochgeladen.";
+
+        return redirect()->route('trips.show', $trip)->with('status', $message);
     }
 
     public function edit(Document $document): View
@@ -99,5 +111,14 @@ class DocumentController extends Controller
         $document->delete();
 
         return redirect()->route('trips.show', $trip)->with('status', 'Dokument wurde geloescht.');
+    }
+
+    private function documentTitle(?string $title, string $originalName, int $fileCount): string
+    {
+        if ($fileCount === 1 && filled($title)) {
+            return $title;
+        }
+
+        return pathinfo($originalName, PATHINFO_FILENAME) ?: 'Dokument';
     }
 }
