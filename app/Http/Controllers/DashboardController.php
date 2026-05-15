@@ -14,11 +14,12 @@ class DashboardController extends Controller
             ->with(['bookings', 'tasks', 'documents'])
             ->latest('start_date')
             ->get()
-            ->sortBy([
-                fn ($trip) => $trip->is_active ? 0 : 1,
-                fn ($trip) => $trip->is_past ? 1 : 0,
-                fn ($trip) => $trip->start_date?->timestamp ?? PHP_INT_MAX,
-            ])
+            ->sortBy(fn ($trip) => sprintf(
+                '%d-%d-%012d',
+                $trip->is_active ? 0 : 1,
+                $trip->is_past ? 1 : 0,
+                $trip->start_date?->timestamp ?? PHP_INT_MAX,
+            ))
             ->values();
 
         return view('dashboard.index', [

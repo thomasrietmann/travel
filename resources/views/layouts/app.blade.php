@@ -12,8 +12,11 @@
         <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
             <a href="{{ route('dashboard') }}" class="text-xl font-semibold tracking-tight text-slate-950">TripControl</a>
 
-            <nav class="flex items-center gap-3 text-sm">
+            <nav class="flex flex-wrap items-center justify-end gap-2 text-sm">
                 @auth
+                    <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Übersicht</a>
+                    <a href="{{ route('tasks.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('tasks.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Tasks</a>
+                    <a href="{{ route('countdown.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('countdown.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Countdown</a>
                     <a href="{{ route('trips.create') }}" class="rounded-md bg-slate-950 px-3 py-2 font-medium text-white hover:bg-slate-800">Neue Reise</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
