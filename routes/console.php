@@ -3,6 +3,7 @@
 use App\Models\Document;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 
 Artisan::command('inspire', function () {
@@ -18,15 +19,25 @@ Artisan::command('documents:migrate-private', function () {
             return;
         }
 
-        if (! Storage::disk('public')->exists($document->file_path)) {
-            $missing++;
+        if (Storage::disk('public')->exists($document->file_path)) {
+            Storage::disk('local')->put($document->file_path, Storage::disk('public')->get($document->file_path));
+            Storage::disk('public')->delete($document->file_path);
+            $migrated++;
 
             return;
         }
 
-        Storage::disk('local')->put($document->file_path, Storage::disk('public')->get($document->file_path));
-        Storage::disk('public')->delete($document->file_path);
-        $migrated++;
+        $legacyPath = base_path('storage/app/public/'.$document->file_path);
+
+        if (File::exists($legacyPath)) {
+            Storage::disk('local')->put($document->file_path, File::get($legacyPath));
+            File::delete($legacyPath);
+            $migrated++;
+
+            return;
+        }
+
+        $missing++;
     });
 
     $this->info("{$migrated} Dokumente nach private Storage migriert.");
