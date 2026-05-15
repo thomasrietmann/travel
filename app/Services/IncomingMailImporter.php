@@ -113,6 +113,10 @@ class IncomingMailImporter
             $this->storeDocument($trip, $booking, $attachment, $extracted);
         }
 
+        if (! $this->hasPdfAttachment($mail['attachments'])) {
+            $this->storeMailPdfDocument($trip, $booking, $subject, $mail['body']);
+        }
+
         ImportedMail::query()->create([
             'user_id' => $user->id,
             'trip_id' => $trip->id,
@@ -206,6 +210,20 @@ class IncomingMailImporter
         ]);
     }
 
+    private function storeMailPdfDocument(Trip $trip, ?Booking $booking, string $subject, string $body): void
+    {
+        $path = 'documents/'.$trip->id.'/'.Str::random(40).'.pdf';
+        $this->writeDocumentFile($path, $this->mailPdf($subject, $body));
+
+        $trip->documents()->create([
+            'booking_id' => $booking?->id,
+            'title' => $subject ? 'Mail: '.$subject : 'Weitergeleitete Mail',
+            'file_path' => $path,
+            'document_type' => 'confirmation',
+            'notes' => 'Automatisch als PDF aus weitergeleiteter Mail gespeichert.',
+        ]);
+    }
+
     private function writeDocumentFile(string $path, string $contents): void
     {
         $stored = Storage::disk('local')->put($path, $contents) && Storage::disk('local')->exists($path);
@@ -227,6 +245,104 @@ class IncomingMailImporter
         }
 
         throw new RuntimeException('Mail-Anhang konnte nicht gespeichert werden.');
+    }
+
+    private function hasPdfAttachment(array $attachments): bool
+    {
+        return collect($attachments)->contains(
+            fn (array $attachment): bool => Str::lower(pathinfo($attachment['filename'] ?? '', PATHINFO_EXTENSION)) === 'pdf'
+        );
+    }
+
+    private function mailPdf(string $subject, string $body): string
+    {
+        $text = implode("\n\n", [
+            'TripControl Mailimport',
+            'Betreff: '.($subject ?: '-'),
+            'Importiert am: '.now()->format('d.m.Y H:i'),
+            'Mailinhalt:',
+            trim($body) ?: '-',
+        ]);
+
+        $lines = $this->pdfLines($text);
+        $pages = array_chunk($lines, 48) ?: [['-']];
+        $objects = [
+            1 => '<< /Type /Catalog /Pages 2 0 R >>',
+        ];
+
+        $pageObjectIds = [];
+        $nextObjectId = 3;
+        $fontObjectId = 3 + (count($pages) * 2);
+
+        foreach ($pages as $pageLines) {
+            $pageObjectId = $nextObjectId++;
+            $contentObjectId = $nextObjectId++;
+            $pageObjectIds[] = $pageObjectId;
+
+            $objects[$pageObjectId] = "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 {$fontObjectId} 0 R >> >> /MediaBox [0 0 595 842] /Contents {$contentObjectId} 0 R >>";
+            $objects[$contentObjectId] = $this->pdfStream($pageLines);
+        }
+
+        $objects[2] = '<< /Type /Pages /Kids ['.implode(' ', array_map(fn (int $id): string => "{$id} 0 R", $pageObjectIds)).'] /Count '.count($pageObjectIds).' >>';
+        $objects[$fontObjectId] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+        ksort($objects);
+
+        return $this->pdfDocument($objects);
+    }
+
+    private function pdfLines(string $text): array
+    {
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
+        $lines = [];
+
+        foreach (explode("\n", $text) as $line) {
+            $wrapped = wordwrap(trim($line), 92, "\n", true);
+            array_push($lines, ...explode("\n", $wrapped ?: ' '));
+        }
+
+        return $lines;
+    }
+
+    private function pdfStream(array $lines): string
+    {
+        $content = "BT\n/F1 10 Tf\n50 790 Td\n14 TL\n";
+
+        foreach ($lines as $line) {
+            $content .= '('.$this->pdfEscape($line).") Tj\nT*\n";
+        }
+
+        $content .= "ET\n";
+
+        return "<< /Length ".strlen($content)." >>\nstream\n{$content}endstream";
+    }
+
+    private function pdfEscape(string $value): string
+    {
+        $encoded = @iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $value);
+        $encoded = $encoded === false ? $value : $encoded;
+
+        return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $encoded);
+    }
+
+    private function pdfDocument(array $objects): string
+    {
+        $pdf = "%PDF-1.4\n";
+        $offsets = [0 => 0];
+
+        foreach ($objects as $id => $object) {
+            $offsets[$id] = strlen($pdf);
+            $pdf .= "{$id} 0 obj\n{$object}\nendobj\n";
+        }
+
+        $xrefOffset = strlen($pdf);
+        $pdf .= "xref\n0 ".(count($objects) + 1)."\n";
+        $pdf .= "0000000000 65535 f \n";
+
+        for ($id = 1; $id <= count($objects); $id++) {
+            $pdf .= sprintf("%010d 00000 n \n", $offsets[$id]);
+        }
+
+        return $pdf."trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xrefOffset}\n%%EOF\n";
     }
 
     private function documentStoragePaths(string $path): array
