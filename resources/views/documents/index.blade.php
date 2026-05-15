@@ -9,44 +9,46 @@
         <a href="{{ route('dashboard') }}" class="inline-flex items-center justify-center rounded-md border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100">Zur Übersicht</a>
     </div>
 
-    @if ($documents->isEmpty())
+    @if ($documentsByTrip->isEmpty())
         <div class="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center">
             <h2 class="text-lg font-semibold">Keine Dokumente vorhanden</h2>
             <p class="mt-2 text-sm text-slate-600">Sobald Dokumente hochgeladen wurden, erscheinen sie hier gesammelt.</p>
         </div>
     @else
-        <div class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-200 text-sm">
-                    <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        <tr>
-                            <th class="px-5 py-3">Dokument</th>
-                            <th class="px-5 py-3">Reise</th>
-                            <th class="px-5 py-3">Buchung</th>
-                            <th class="px-5 py-3">Typ</th>
-                            <th class="px-5 py-3">Hinzugefügt</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
+        <div class="space-y-5">
+            @foreach ($documentsByTrip as $documents)
+                @php($trip = $documents->first()->trip)
+
+                <section class="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                    <div class="flex flex-col gap-2 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                            <h2 class="text-lg font-semibold text-slate-950">{{ $trip->title }}</h2>
+                            <p class="mt-1 text-sm text-slate-500">{{ $trip->destination ?: 'Keine Destination' }} · {{ $documents->count() }} Dokumente</p>
+                        </div>
+                        <a href="{{ route('trips.show', $trip) }}" class="text-sm font-medium text-slate-700 hover:text-slate-950 hover:underline">Reise öffnen</a>
+                    </div>
+
+                    <div class="divide-y divide-slate-100">
                         @foreach ($documents as $document)
-                            <tr>
-                                <td class="px-5 py-4">
+                            <div class="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
                                     <a href="{{ route('documents.download', $document) }}" class="font-medium text-slate-950 hover:underline">{{ $document->title }}</a>
+                                    <p class="mt-1 text-sm text-slate-500">
+                                        {{ $document->document_type_label }}
+                                        @if ($document->booking)
+                                            · {{ $document->booking->title }}
+                                        @endif
+                                        · {{ $document->created_at?->format('d.m.Y') ?? '-' }}
+                                    </p>
                                     @if ($document->notes)
-                                        <div class="mt-1 max-w-xl text-slate-500">{{ $document->notes }}</div>
+                                        <p class="mt-1 max-w-xl text-sm text-slate-500">{{ $document->notes }}</p>
                                     @endif
-                                </td>
-                                <td class="px-5 py-4">
-                                    <a href="{{ route('trips.show', $document->trip) }}" class="font-medium text-slate-700 hover:text-slate-950 hover:underline">{{ $document->trip->title }}</a>
-                                </td>
-                                <td class="px-5 py-4">{{ $document->booking?->title ?? '-' }}</td>
-                                <td class="px-5 py-4">{{ $document->document_type_label }}</td>
-                                <td class="px-5 py-4">{{ $document->created_at?->format('d.m.Y') ?? '-' }}</td>
-                            </tr>
+                                </div>
+                            </div>
                         @endforeach
-                    </tbody>
-                </table>
-            </div>
+                    </div>
+                </section>
+            @endforeach
         </div>
     @endif
 @endsection
