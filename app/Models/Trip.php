@@ -116,7 +116,7 @@ class Trip extends Model
         $total = $this->bookings->count();
 
         if ($total === 0) {
-            return 100;
+            return 0;
         }
 
         $confirmed = $this->bookings
@@ -131,7 +131,7 @@ class Trip extends Model
         $total = $this->bookings->count();
 
         if ($total === 0) {
-            return 100;
+            return 0;
         }
 
         $paid = $this->bookings
