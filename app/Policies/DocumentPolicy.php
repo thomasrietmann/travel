@@ -9,7 +9,7 @@ class DocumentPolicy
 {
     public function view(User $user, Document $document): bool
     {
-        return $document->trip->user_id === $user->id;
+        return $document->trip->isAccessibleBy($user);
     }
 
     public function update(User $user, Document $document): bool

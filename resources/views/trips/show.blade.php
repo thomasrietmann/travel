@@ -34,11 +34,13 @@
 
         <div class="flex gap-2">
             <a href="{{ route('trips.edit', $trip) }}" class="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">Bearbeiten</a>
-            <form method="POST" action="{{ route('trips.destroy', $trip) }}" onsubmit="return confirm('Reise wirklich loeschen?')">
-                @csrf
-                @method('DELETE')
-                <button class="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Loeschen</button>
-            </form>
+            @can('delete', $trip)
+                <form method="POST" action="{{ route('trips.destroy', $trip) }}" onsubmit="return confirm('Reise wirklich loeschen?')">
+                    @csrf
+                    @method('DELETE')
+                    <button class="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Loeschen</button>
+                </form>
+            @endcan
         </div>
     </div>
 
@@ -48,6 +50,7 @@
         <a href="#payments" class="px-3 py-2 text-slate-700 hover:text-slate-950">Zahlungen</a>
         <a href="#tasks" class="px-3 py-2 text-slate-700 hover:text-slate-950">Aufgaben</a>
         <a href="#documents" class="px-3 py-2 text-slate-700 hover:text-slate-950">Dokumente</a>
+        <a href="#sharing" class="px-3 py-2 text-slate-700 hover:text-slate-950">Freigaben</a>
     </div>
 
     <section id="overview" class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -158,7 +161,7 @@
         </div>
     </section>
 
-    <section id="documents" class="rounded-lg border border-slate-200 bg-white shadow-sm">
+    <section id="documents" class="mb-8 rounded-lg border border-slate-200 bg-white shadow-sm">
         <div class="flex items-center justify-between border-b border-slate-200 p-5">
             <h2 class="text-lg font-semibold">Dokumente</h2>
             <a href="{{ route('trips.documents.create', $trip) }}" class="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">Dokument hochladen</a>
@@ -175,6 +178,54 @@
             @empty
                 <p class="p-5 text-sm text-slate-500">Keine Dokumente vorhanden.</p>
             @endforelse
+        </div>
+    </section>
+
+    <section id="sharing" class="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-200 p-5">
+            <h2 class="text-lg font-semibold">Freigaben</h2>
+            <p class="mt-1 text-sm text-slate-500">Besitzer: {{ $trip->user->name }} ({{ $trip->user->email }})</p>
+        </div>
+
+        <div class="p-5">
+            @can('share', $trip)
+                <form method="POST" action="{{ route('trips.shares.store', $trip) }}" class="grid gap-3 sm:grid-cols-[1fr_auto]">
+                    @csrf
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-700">TripControl-Benutzer per E-Mail hinzufügen</label>
+                        <input id="email" name="email" type="email" value="{{ old('email') }}" placeholder="name@example.com" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                        @error('email') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+                    </div>
+                    <div class="flex items-end">
+                        <button class="w-full rounded-md bg-slate-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800">Teilen</button>
+                    </div>
+                </form>
+            @else
+                <p class="text-sm text-slate-600">Diese Reise wurde mit dir geteilt. Du kannst sie ansehen und bearbeiten.</p>
+            @endcan
+
+            <div class="mt-6">
+                <h3 class="text-sm font-semibold text-slate-950">Geteilt mit</h3>
+                <div class="mt-3 divide-y divide-slate-100 rounded-md border border-slate-200">
+                    @forelse ($trip->sharedUsers as $sharedUser)
+                        <div class="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="font-medium text-slate-950">{{ $sharedUser->name }}</p>
+                                <p class="text-sm text-slate-500">{{ $sharedUser->email }}</p>
+                            </div>
+                            @can('share', $trip)
+                                <form method="POST" action="{{ route('trips.shares.destroy', [$trip, $sharedUser]) }}" onsubmit="return confirm('Freigabe wirklich entfernen?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button class="rounded-md border border-red-200 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">Entfernen</button>
+                                </form>
+                            @endcan
+                        </div>
+                    @empty
+                        <p class="px-4 py-5 text-sm text-slate-500">Diese Reise ist noch mit niemandem geteilt.</p>
+                    @endforelse
+                </div>
+            </div>
         </div>
     </section>
 @endsection

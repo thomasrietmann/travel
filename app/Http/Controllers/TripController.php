@@ -31,7 +31,7 @@ class TripController extends Controller
     {
         $this->authorize('view', $trip);
 
-        $trip->load(['bookings.documents', 'tasks', 'documents.booking']);
+        $trip->load(['bookings.documents', 'tasks', 'documents.booking', 'user', 'sharedUsers']);
 
         return view('trips.show', ['trip' => $trip]);
     }

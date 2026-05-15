@@ -9,7 +9,7 @@ class TaskPolicy
 {
     public function update(User $user, Task $task): bool
     {
-        return $task->trip->user_id === $user->id;
+        return $task->trip->isAccessibleBy($user);
     }
 
     public function delete(User $user, Task $task): bool

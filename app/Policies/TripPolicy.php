@@ -9,7 +9,7 @@ class TripPolicy
 {
     public function view(User $user, Trip $trip): bool
     {
-        return $trip->user_id === $user->id;
+        return $trip->isAccessibleBy($user);
     }
 
     public function update(User $user, Trip $trip): bool
@@ -19,6 +19,11 @@ class TripPolicy
 
     public function delete(User $user, Trip $trip): bool
     {
-        return $this->view($user, $trip);
+        return $trip->isOwnedBy($user);
+    }
+
+    public function share(User $user, Trip $trip): bool
+    {
+        return $trip->isOwnedBy($user);
     }
 }

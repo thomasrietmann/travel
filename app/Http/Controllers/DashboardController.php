@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Trip;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -9,9 +10,11 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        $trips = $request->user()
-            ->trips()
+        $trips = Trip::query()
             ->with(['bookings', 'tasks', 'documents'])
+            ->where(fn ($query) => $query
+                ->where('user_id', $request->user()->id)
+                ->orWhereHas('sharedUsers', fn ($sharedQuery) => $sharedQuery->whereKey($request->user()->id)))
             ->latest('start_date')
             ->get()
             ->sortBy(fn ($trip) => sprintf(

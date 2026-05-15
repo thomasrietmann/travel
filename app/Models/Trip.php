@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -52,6 +53,30 @@ class Trip extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function sharedUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)->withTimestamps();
+    }
+
+    public function isOwnedBy(User $user): bool
+    {
+        return $this->user_id === $user->id;
+    }
+
+    public function isSharedWith(User $user): bool
+    {
+        if ($this->relationLoaded('sharedUsers')) {
+            return $this->sharedUsers->contains('id', $user->id);
+        }
+
+        return $this->sharedUsers()->whereKey($user->id)->exists();
+    }
+
+    public function isAccessibleBy(User $user): bool
+    {
+        return $this->isOwnedBy($user) || $this->isSharedWith($user);
     }
 
     public function bookings(): HasMany
