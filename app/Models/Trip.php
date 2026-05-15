@@ -143,7 +143,7 @@ class Trip extends Model
             return 'red';
         }
 
-        if ($this->open_amount > 0 || $this->open_tasks_count > 0 || $this->booking_completion_percentage < 100) {
+        if ($this->open_tasks_count > 0 || $this->booking_completion_percentage < 100) {
             return 'yellow';
         }
 
