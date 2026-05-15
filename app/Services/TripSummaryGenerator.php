@@ -78,8 +78,9 @@ class TripSummaryGenerator
 
         return implode("\n", [
             'Erstelle eine kurze, hilfreiche Zusammenfassung fuer diese Reise in Deutsch.',
-            'Fokus: wichtigste Buchungen, Zahlungsstand, fehlende/offene Punkte, vorhandene Dokumente und naechste Fristen.',
-            'Schreibe 3 bis 5 kurze Saetze. Keine Markdown-Liste, keine Ueberschrift.',
+            'Fokus: Reiseinhalt. Beschreibe was diese Reise ist, wohin sie geht, wie gereist wird, welche Orte, Unterkuenfte, Tickets oder Aktivitaeten erkennbar sind und was den Charakter der Reise ausmacht.',
+            'Buchungsstatus, Zahlungsstand, fehlende Dokumente und Tasks nur kurz erwaehnen, wenn sie fuer die Reise praktisch wichtig sind. Sie sollen nicht der Mittelpunkt sein.',
+            'Schreibe 3 bis 5 kurze Saetze. Keine Markdown-Liste, keine Ueberschrift. Der Text soll sich wie eine kompakte Reisebeschreibung lesen, nicht wie ein Projektstatus.',
             '',
             'Reise:',
             'Titel: '.$trip->title,
