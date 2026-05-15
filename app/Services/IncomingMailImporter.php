@@ -8,6 +8,7 @@ use App\Models\ImportedMail;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\UserEmailAlias;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -193,7 +194,7 @@ class IncomingMailImporter
         $extension = pathinfo($filename, PATHINFO_EXTENSION);
         $path = 'documents/'.$trip->id.'/'.Str::random(40).($extension ? ".{$extension}" : '');
 
-        Storage::disk('local')->put($path, $attachment['contents']);
+        $this->writeDocumentFile($path, $attachment['contents']);
 
         $trip->documents()->create([
             'booking_id' => $booking?->id,
@@ -202,6 +203,22 @@ class IncomingMailImporter
             'document_type' => in_array($data['document_type'] ?? '', Document::TYPES, true) ? $data['document_type'] : 'confirmation',
             'notes' => 'Automatisch aus weitergeleiteter Mail gespeichert.',
         ]);
+    }
+
+    private function writeDocumentFile(string $path, string $contents): void
+    {
+        if (Storage::disk('local')->put($path, $contents) && Storage::disk('local')->exists($path)) {
+            return;
+        }
+
+        $absolutePath = Storage::disk('local')->path($path);
+        File::ensureDirectoryExists(dirname($absolutePath));
+
+        if (File::put($absolutePath, $contents) !== false && File::exists($absolutePath)) {
+            return;
+        }
+
+        throw new RuntimeException('Mail-Anhang konnte nicht gespeichert werden.');
     }
 
     private function findUserBySender(string $email): ?User
