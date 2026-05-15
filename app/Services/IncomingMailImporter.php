@@ -84,9 +84,10 @@ class IncomingMailImporter
             return 'ignored';
         }
 
-        $senderEmail = $this->senderEmail($headers);
+        $senderEmails = $this->senderEmails($headers);
+        $senderEmail = $senderEmails[0] ?? '';
         $subject = $this->decodeHeader($headers->subject ?? '');
-        $user = $this->findUserBySender($senderEmail);
+        $user = $this->findUserBySenders($senderEmails);
 
         if (! $user) {
             ImportedMail::query()->create([
@@ -94,7 +95,7 @@ class IncomingMailImporter
                 'sender_email' => $senderEmail,
                 'subject' => $subject,
                 'status' => 'ignored',
-                'notes' => 'Kein TripControl-Benutzer fuer Absender gefunden.',
+                'notes' => 'Kein TripControl-Benutzer fuer Absender gefunden: '.implode(', ', $senderEmails),
                 'processed_at' => now(),
             ]);
 
@@ -238,12 +239,19 @@ class IncomingMailImporter
         ]));
     }
 
-    private function findUserBySender(string $email): ?User
+    private function findUserBySenders(array $emails): ?User
     {
-        $email = Str::lower($email);
+        foreach ($emails as $email) {
+            $email = Str::lower($email);
+            $user = User::query()->where('email', $email)->first()
+                ?? UserEmailAlias::query()->where('email', $email)->first()?->user;
 
-        return User::query()->where('email', $email)->first()
-            ?? UserEmailAlias::query()->where('email', $email)->first()?->user;
+            if ($user) {
+                return $user;
+            }
+        }
+
+        return null;
     }
 
     private function mailContent($imap, int $messageNumber): array
@@ -333,15 +341,19 @@ class IncomingMailImporter
         };
     }
 
-    private function senderEmail(object $headers): string
+    private function senderEmails(object $headers): array
     {
-        $from = $headers->from[0] ?? null;
+        $emails = [];
 
-        if (! $from || empty($from->mailbox) || empty($from->host)) {
-            return '';
+        foreach (['from', 'sender', 'reply_to'] as $property) {
+            foreach (($headers->{$property} ?? []) as $address) {
+                if (! empty($address->mailbox) && ! empty($address->host)) {
+                    $emails[] = Str::lower($address->mailbox.'@'.$address->host);
+                }
+            }
         }
 
-        return Str::lower($from->mailbox.'@'.$from->host);
+        return array_values(array_unique($emails));
     }
 
     private function messageId($imap, int $messageNumber): string
