@@ -16,7 +16,7 @@ return [
         ],
         'file' => [
             'driver' => 'file',
-            'path' => storage_path('framework/cache/data'),
+            'path' => env('CACHE_FILE_PATH', storage_path('framework/cache/data')),
         ],
     ],
     'prefix' => env('CACHE_PREFIX', 'tripcontrol_cache'),
