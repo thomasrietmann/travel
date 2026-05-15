@@ -42,10 +42,12 @@
                                     - {{ $trip->end_date->format('d.m.Y') }}
                                 @endif
                             </p>
-                            <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->type_label }}</span>
-                                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->status_label }}</span>
-                            </div>
+                            @unless ($public ?? false)
+                                <div class="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->type_label }}</span>
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->status_label }}</span>
+                                </div>
+                            @endunless
                         </div>
 
                         <div class="rounded-lg bg-slate-950 px-5 py-4 text-center text-white">
