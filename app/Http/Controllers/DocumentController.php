@@ -76,7 +76,7 @@ class DocumentController extends Controller
         $location = $this->documentLocation($document);
 
         if (! $location) {
-            return back()->with('error', 'Datei wurde nicht gefunden. Geprüft: '.$this->checkedPathsLabel($document));
+            return back()->with('error', 'Die Datei wurde nicht gefunden. Bitte lade das Dokument erneut hoch.');
         }
 
         $extension = pathinfo($document->file_path, PATHINFO_EXTENSION);
@@ -185,34 +185,4 @@ class DocumentController extends Controller
         ]));
     }
 
-    private function checkedPathsLabel(Document $document): string
-    {
-        $checks = [
-            'local disk' => [
-                'path' => $document->file_path,
-                'exists' => Storage::disk(self::DOCUMENT_DISK)->exists($document->file_path),
-                'readable' => null,
-            ],
-            'public disk' => [
-                'path' => $document->file_path,
-                'exists' => Storage::disk(self::LEGACY_DOCUMENT_DISK)->exists($document->file_path),
-                'readable' => null,
-            ],
-        ];
-
-        foreach ($this->legacyAbsolutePaths($document) as $path) {
-            $checks[$path] = [
-                'path' => $path,
-                'exists' => File::exists($path),
-                'readable' => is_readable($path),
-            ];
-        }
-
-        return collect($checks)
-            ->map(fn (array $check, string $label): string => $label.': '.$check['path']
-                .' (exists: '.($check['exists'] ? 'ja' : 'nein')
-                .($check['readable'] === null ? '' : ', readable: '.($check['readable'] ? 'ja' : 'nein'))
-                .')')
-            ->implode(' | ');
-    }
 }
