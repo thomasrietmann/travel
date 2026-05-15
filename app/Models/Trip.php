@@ -167,10 +167,38 @@ class Trip extends Model
             ?? false;
     }
 
+    public function getIsActiveAttribute(): bool
+    {
+        if (! $this->start_date) {
+            return false;
+        }
+
+        $endDate = $this->end_date ?? $this->start_date;
+
+        return today()->betweenIncluded($this->start_date, $endDate);
+    }
+
+    public function getActiveTripLabelAttribute(): string
+    {
+        if (! $this->is_active) {
+            return '';
+        }
+
+        $endDate = $this->end_date ?? $this->start_date;
+        $totalDays = (int) $this->start_date->diffInDays($endDate) + 1;
+        $currentDay = (int) $this->start_date->diffInDays(today()) + 1;
+
+        return "Aktiv: Tag {$currentDay} von {$totalDays}";
+    }
+
     public function getStartsInLabelAttribute(): string
     {
         if (! $this->start_date) {
             return 'Kein Startdatum';
+        }
+
+        if ($this->is_active) {
+            return $this->active_trip_label;
         }
 
         if ($this->is_past) {

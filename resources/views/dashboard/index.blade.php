@@ -25,9 +25,11 @@
                     ][$trip->traffic_light];
                     $paidByCurrency = $trip->bookings->where('payment_status', 'paid')->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
                     $openByCurrency = $trip->bookings->whereIn('payment_status', ['unpaid', 'partially_paid'])->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
-                    $cardClass = $trip->is_past
-                        ? 'border-slate-200 bg-slate-100 opacity-70 hover:opacity-85'
-                        : 'border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-md';
+                    $cardClass = match (true) {
+                        $trip->is_active => 'border-emerald-300 bg-emerald-50 ring-1 ring-emerald-200 hover:-translate-y-0.5 hover:shadow-md',
+                        $trip->is_past => 'border-slate-200 bg-slate-100 opacity-70 hover:opacity-85',
+                        default => 'border-slate-200 bg-white hover:-translate-y-0.5 hover:shadow-md',
+                    };
                 @endphp
                 <a href="{{ route('trips.show', $trip) }}" class="rounded-lg border p-5 shadow-sm transition {{ $cardClass }}">
                     <div class="flex items-start justify-between gap-4">
@@ -44,6 +46,9 @@
                     </div>
 
                     <div class="mt-4 flex flex-wrap gap-2 text-xs font-medium">
+                        @if ($trip->is_active)
+                            <span class="rounded-full bg-emerald-600 px-2.5 py-1 text-white">{{ $trip->active_trip_label }}</span>
+                        @endif
                         <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->type_label }}</span>
                         <span class="rounded-full bg-slate-100 px-2.5 py-1 text-slate-700">{{ $trip->status_label }}</span>
                     </div>
