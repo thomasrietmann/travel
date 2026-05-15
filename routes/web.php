@@ -13,6 +13,7 @@ use App\Http\Controllers\TripShareController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => auth()->check() ? redirect()->route('dashboard') : redirect()->route('login'));
+Route::get('/shared/countdown/{token}', [CountdownController::class, 'public'])->name('countdown.public');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
