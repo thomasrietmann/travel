@@ -87,15 +87,16 @@
         <div class="border-b border-slate-200 bg-slate-50 p-5">
             <form method="POST" action="{{ route('trips.bookings.import', $trip) }}" enctype="multipart/form-data" data-booking-import-form>
                 @csrf
-                <label for="booking_document" data-booking-dropzone class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center transition hover:border-slate-500 hover:bg-slate-50">
-                    <span class="text-sm font-semibold text-slate-950">PDF, Screenshot oder Bild hierher ziehen</span>
-                    <span class="mt-1 text-sm text-slate-500">oder klicken und Datei auswählen. Die AI erstellt daraus eine Buchung mit Dokumentanhang.</span>
+                <label for="booking_documents" data-booking-dropzone class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center transition hover:border-slate-500 hover:bg-slate-50">
+                    <span class="text-sm font-semibold text-slate-950">PDFs, Screenshots oder Bilder hierher ziehen</span>
+                    <span class="mt-1 text-sm text-slate-500">oder klicken und Dateien auswählen. Die AI erstellt pro Datei eine Buchung mit Dokumentanhang.</span>
                     <span data-booking-file-name class="mt-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"></span>
                 </label>
-                <input id="booking_document" name="booking_document" type="file" accept=".pdf,image/jpeg,image/png,image/webp" class="sr-only" data-booking-file-input>
-                @error('booking_document') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                <input id="booking_documents" name="booking_documents[]" type="file" accept=".pdf,image/jpeg,image/png,image/webp" multiple class="sr-only" data-booking-file-input>
+                @error('booking_documents') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                @error('booking_documents.*') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
                 <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <p class="text-xs text-slate-500">Erlaubt sind PDF, JPG, PNG und WebP bis 15 MB.</p>
+                    <p class="text-xs text-slate-500">Erlaubt sind PDF, JPG, PNG und WebP bis 15 MB pro Datei, maximal 10 Dateien.</p>
                     <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Mit AI erfassen</button>
                 </div>
             </form>
@@ -264,7 +265,9 @@
                     return;
                 }
 
-                fileName.textContent = input.files[0].name;
+                fileName.textContent = input.files.length === 1
+                    ? input.files[0].name
+                    : `${input.files.length} Dateien ausgewählt`;
                 fileName.classList.remove('hidden');
             };
 

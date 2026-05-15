@@ -14,7 +14,8 @@ class BookingImportRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'booking_document' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:15360'],
+            'booking_documents' => ['required', 'array', 'min:1', 'max:10'],
+            'booking_documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:15360'],
         ];
     }
 }

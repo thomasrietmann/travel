@@ -18,16 +18,56 @@ class BookingImportController extends Controller
     {
         $this->authorize('update', $trip);
 
-        try {
-            $extracted = $extractor->extract($trip, $request->file('booking_document'));
-        } catch (Throwable $exception) {
-            return back()
-                ->withInput()
-                ->withErrors(['booking_document' => $exception->getMessage()]);
+        $created = 0;
+        $failed = [];
+
+        foreach ($request->file('booking_documents', []) as $file) {
+            try {
+                $extracted = $extractor->extract($trip, $file);
+                $validator = Validator::make($this->bookingData($extracted, $trip), $this->bookingRules());
+
+                if ($validator->fails()) {
+                    $failed[] = $file->getClientOriginalName().': Die AI-Auswertung konnte nicht in eine gueltige Buchung umgewandelt werden.';
+                    continue;
+                }
+
+                $booking = $trip->bookings()->create($validator->validated());
+                $trip->documents()->create([
+                    'booking_id' => $booking->id,
+                    'title' => $this->clean($extracted['document_title'] ?? '') ?: $booking->title,
+                    'file_path' => $file->store("documents/{$trip->id}", 'public'),
+                    'document_type' => in_array($extracted['document_type'] ?? '', Document::TYPES, true) ? $extracted['document_type'] : 'confirmation',
+                    'notes' => 'Automatisch aus Buchungsimport erstellt.',
+                ]);
+
+                $created++;
+            } catch (Throwable $exception) {
+                $failed[] = $file->getClientOriginalName().': '.$exception->getMessage();
+            }
         }
 
-        $bookingData = $this->bookingData($extracted, $trip);
-        $validator = Validator::make($bookingData, [
+        if ($created === 0) {
+            return back()
+                ->withInput()
+                ->withErrors(['booking_documents' => implode(' ', $failed)]);
+        }
+
+        $message = $created === 1
+            ? '1 Buchung wurde per AI-Import erstellt. Bitte pruefe die erkannten Daten kurz.'
+            : "{$created} Buchungen wurden per AI-Import erstellt. Bitte pruefe die erkannten Daten kurz.";
+
+        if ($failed !== []) {
+            $message .= ' Nicht importiert: '.implode(' ', $failed);
+        }
+
+        return redirect()
+            ->route('trips.show', $trip)
+            ->with('status', $message);
+    }
+
+    private function bookingRules(): array
+    {
+        return [
             'category' => ['required', Rule::in(Booking::CATEGORIES)],
             'title' => ['required', 'string', 'max:255'],
             'provider' => ['nullable', 'string', 'max:255'],
@@ -41,26 +81,7 @@ class BookingImportController extends Controller
             'due_date' => ['nullable', 'date'],
             'cancellation_deadline' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
-        ]);
-
-        if ($validator->fails()) {
-            return back()
-                ->withInput()
-                ->withErrors(['booking_document' => 'Die AI-Auswertung konnte nicht in eine gueltige Buchung umgewandelt werden.']);
-        }
-
-        $booking = $trip->bookings()->create($validator->validated());
-        $trip->documents()->create([
-            'booking_id' => $booking->id,
-            'title' => $this->clean($extracted['document_title'] ?? '') ?: $booking->title,
-            'file_path' => $request->file('booking_document')->store("documents/{$trip->id}", 'public'),
-            'document_type' => in_array($extracted['document_type'] ?? '', Document::TYPES, true) ? $extracted['document_type'] : 'confirmation',
-            'notes' => 'Automatisch aus Buchungsimport erstellt.',
-        ]);
-
-        return redirect()
-            ->route('trips.show', $trip)
-            ->with('status', 'Buchung wurde per AI-Import erstellt. Bitte pruefe die erkannten Daten kurz.');
+        ];
     }
 
     private function bookingData(array $data, Trip $trip): array
