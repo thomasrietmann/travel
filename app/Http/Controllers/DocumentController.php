@@ -173,10 +173,16 @@ class DocumentController extends Controller
 
     private function legacyAbsolutePaths(Document $document): array
     {
-        return [
+        return array_values(array_unique([
+            Storage::disk(self::DOCUMENT_DISK)->path($document->file_path),
+            Storage::disk(self::LEGACY_DOCUMENT_DISK)->path($document->file_path),
+            storage_path('app/private/'.$document->file_path),
+            storage_path('app/public/'.$document->file_path),
             base_path('storage/app/private/'.$document->file_path),
             base_path('storage/app/public/'.$document->file_path),
-        ];
+            '/travel.git/storage/app/private/'.$document->file_path,
+            '/travel.git/storage/app/public/'.$document->file_path,
+        ]));
     }
 
     private function checkedPathsLabel(Document $document): string
