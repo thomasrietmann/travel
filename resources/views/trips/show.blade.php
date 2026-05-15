@@ -126,8 +126,13 @@
                     @forelse ($trip->bookings as $booking)
                         <tr>
                             <td class="px-5 py-4">
-                                <div class="font-medium text-slate-950">{{ $booking->title }}</div>
-                                <div class="text-slate-500">{{ $booking->provider ?: $booking->category_label }}</div>
+                                <div class="flex items-start gap-3">
+                                    <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-100 text-base font-semibold text-slate-700" title="{{ $booking->category_label }}">{{ $booking->category_icon }}</span>
+                                    <div>
+                                        <div class="font-medium text-slate-950">{{ $booking->title }}</div>
+                                        <div class="text-slate-500">{{ $booking->provider ?: $booking->category_label }}</div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="px-5 py-4">{{ $booking->booking_status_label }}</td>
                             <td class="px-5 py-4">{{ $booking->booking_reference ?: '-' }}</td>

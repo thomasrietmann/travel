@@ -38,6 +38,17 @@ class Booking extends Model
         'partially_paid' => 'Teilweise bezahlt',
         'paid' => 'Bezahlt',
     ];
+    public const CATEGORY_ICONS = [
+        'flight' => '✈',
+        'hotel' => '▣',
+        'camper' => '▤',
+        'car' => '◆',
+        'ticket' => '▥',
+        'transport' => '↔',
+        'activity' => '◇',
+        'insurance' => '◈',
+        'other' => '•',
+    ];
 
     protected $fillable = [
         'trip_id',
@@ -80,6 +91,11 @@ class Booking extends Model
     public function getCategoryLabelAttribute(): string
     {
         return self::CATEGORY_LABELS[$this->category] ?? $this->category;
+    }
+
+    public function getCategoryIconAttribute(): string
+    {
+        return self::CATEGORY_ICONS[$this->category] ?? self::CATEGORY_ICONS['other'];
     }
 
     public function getBookingStatusLabelAttribute(): string
