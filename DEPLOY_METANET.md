@@ -250,6 +250,25 @@ git pull origin main
 /opt/php83/bin/php artisan view:cache
 ```
 
+## Waehrungskurse anpassen
+
+TripControl rechnet alle Beträge mit festen Kursen nach CHF um. Die Standardkurse liegen in `config/exchange.php`. Fuer servereigene Kurse, die bei `git pull` nicht ueberschrieben werden sollen:
+
+```bash
+cd ~/travel.git
+cp config/exchange.local.example.php config/exchange.local.php
+nano config/exchange.local.php
+```
+
+Die Werte unter `rates_to_chf` bedeuten jeweils: `1 Fremdwaehrung = x CHF`.
+
+Nach jeder Anpassung:
+
+```bash
+/opt/php83/bin/php artisan optimize:clear
+/opt/php83/bin/php artisan config:cache
+```
+
 ## 14. Fehlerbehebung
 
 ### 500 Fehler

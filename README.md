@@ -53,10 +53,29 @@ Passwort: password
 
 ## 5. Naechste moegliche Features
 
-- Waehrungsumrechnung mit festen oder tagesaktuellen Kursen
+- Tagesaktuelle Waehrungskurse statt lokaler Fixkurse
 - Filter und Suche im Dashboard
 - Task-Erinnerungen per E-Mail
 - Dokumentenvorschau fuer PDF und Bilder
 - Export einer Reiseuebersicht als PDF
 - Kalenderansicht fuer Deadlines und Reisedaten
 - Mehrere Reisende oder Familienmitglieder pro Reise
+
+## Waehrungskurse
+
+Die App rechnet Buchungen mit festen Kursen in CHF um. Standardkurse liegen in `config/exchange.php`.
+
+Fuer lokale oder serverseitige Anpassungen eine nicht versionierte Datei anlegen:
+
+```bash
+cp config/exchange.local.example.php config/exchange.local.php
+```
+
+Danach in `config/exchange.local.php` die Werte unter `rates_to_chf` anpassen. Beispiel: `EUR => 0.9150` bedeutet `1 EUR = 0.9150 CHF`.
+
+Nach Aenderungen auf einem gecachten Server:
+
+```bash
+php artisan optimize:clear
+php artisan config:cache
+```

@@ -1,4 +1,5 @@
 /.env
+config/exchange.local.php
 /.phpunit.cache
 /vendor
 /node_modules

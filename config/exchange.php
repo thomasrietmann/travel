@@ -1,6 +1,6 @@
 <?php
 
-return [
+$defaults = [
     'base_currency' => 'CHF',
     'source' => 'Banque de France daily parities, published 2026-05-14',
     'rates_to_chf' => [
@@ -11,3 +11,11 @@ return [
         'NOK' => 0.0847,
     ],
 ];
+
+$localConfig = __DIR__.'/exchange.local.php';
+
+if (file_exists($localConfig)) {
+    return array_replace_recursive($defaults, require $localConfig);
+}
+
+return $defaults;
