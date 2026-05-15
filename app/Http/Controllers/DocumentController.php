@@ -181,10 +181,32 @@ class DocumentController extends Controller
 
     private function checkedPathsLabel(Document $document): string
     {
-        return implode(' | ', [
-            'local disk: '.$document->file_path,
-            'public disk: '.$document->file_path,
-            ...$this->legacyAbsolutePaths($document),
-        ]);
+        $checks = [
+            'local disk' => [
+                'path' => $document->file_path,
+                'exists' => Storage::disk(self::DOCUMENT_DISK)->exists($document->file_path),
+                'readable' => null,
+            ],
+            'public disk' => [
+                'path' => $document->file_path,
+                'exists' => Storage::disk(self::LEGACY_DOCUMENT_DISK)->exists($document->file_path),
+                'readable' => null,
+            ],
+        ];
+
+        foreach ($this->legacyAbsolutePaths($document) as $path) {
+            $checks[$path] = [
+                'path' => $path,
+                'exists' => File::exists($path),
+                'readable' => is_readable($path),
+            ];
+        }
+
+        return collect($checks)
+            ->map(fn (array $check, string $label): string => $label.': '.$check['path']
+                .' (exists: '.($check['exists'] ? 'ja' : 'nein')
+                .($check['readable'] === null ? '' : ', readable: '.($check['readable'] ? 'ja' : 'nein'))
+                .')')
+            ->implode(' | ');
     }
 }
