@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Http\Requests\BookingRequest;
 use App\Models\Booking;
 use App\Models\Trip;
+use App\Services\TripSummaryGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Throwable;
 
 class BookingController extends Controller
 {
@@ -23,12 +25,13 @@ class BookingController extends Controller
         ]);
     }
 
-    public function store(BookingRequest $request, Trip $trip): RedirectResponse
+    public function store(BookingRequest $request, Trip $trip, TripSummaryGenerator $summaryGenerator): RedirectResponse
     {
         $this->authorize('update', $trip);
 
         $booking = $trip->bookings()->create($this->bookingData($request));
         $this->storeDocument($request, $trip, $booking);
+        $this->regenerateSummary($summaryGenerator, $trip);
 
         return redirect()->route('trips.show', $trip)->with('status', 'Buchung wurde erstellt.');
     }
@@ -83,5 +86,14 @@ class BookingController extends Controller
             'document_type' => $request->input('document_type', 'confirmation'),
             'notes' => $request->input('document_notes'),
         ]);
+    }
+
+    private function regenerateSummary(TripSummaryGenerator $summaryGenerator, Trip $trip): void
+    {
+        try {
+            $summaryGenerator->regenerate($trip->refresh());
+        } catch (Throwable) {
+            // Eine Buchung soll nicht scheitern, nur weil die AI-Summary nicht erstellt werden konnte.
+        }
     }
 }

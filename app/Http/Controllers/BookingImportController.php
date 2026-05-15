@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\Document;
 use App\Models\Trip;
 use App\Services\BookingAiExtractor;
+use App\Services\TripSummaryGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
@@ -14,7 +15,7 @@ use Throwable;
 
 class BookingImportController extends Controller
 {
-    public function store(BookingImportRequest $request, Trip $trip, BookingAiExtractor $extractor): RedirectResponse
+    public function store(BookingImportRequest $request, Trip $trip, BookingAiExtractor $extractor, TripSummaryGenerator $summaryGenerator): RedirectResponse
     {
         $this->authorize('update', $trip);
 
@@ -52,6 +53,8 @@ class BookingImportController extends Controller
                 ->withErrors(['booking_documents' => implode(' ', $failed)]);
         }
 
+        $this->regenerateSummary($summaryGenerator, $trip);
+
         $message = $created === 1
             ? '1 Buchung wurde per AI-Import erstellt. Bitte pruefe die erkannten Daten kurz.'
             : "{$created} Buchungen wurden per AI-Import erstellt. Bitte pruefe die erkannten Daten kurz.";
@@ -63,6 +66,15 @@ class BookingImportController extends Controller
         return redirect()
             ->route('trips.show', $trip)
             ->with('status', $message);
+    }
+
+    private function regenerateSummary(TripSummaryGenerator $summaryGenerator, Trip $trip): void
+    {
+        try {
+            $summaryGenerator->regenerate($trip->refresh());
+        } catch (Throwable) {
+            // Erfolgreich importierte Buchungen bleiben bestehen, auch wenn die AI-Summary fehlschlaegt.
+        }
     }
 
     private function bookingRules(): array

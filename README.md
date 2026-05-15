@@ -25,6 +25,7 @@ Optional fuer den AI-Buchungsimport:
 ```dotenv
 OPENAI_API_KEY=
 OPENAI_BOOKING_MODEL=gpt-5.4-mini
+OPENAI_SUMMARY_MODEL=gpt-5.4-mini
 OPENAI_TIMEOUT=90
 ```
 
@@ -75,6 +76,8 @@ Passwort: password
 Wenn `OPENAI_API_KEY` gesetzt ist, kann auf der Reise-Detailseite unter "Buchungen" ein PDF, Screenshot oder Bild hochgeladen werden. TripControl sendet die Datei an die OpenAI Responses API, liest daraus strukturierte Buchungsdaten aus, erstellt die Buchung und speichert die Datei als Dokumentanhang.
 
 Ohne API-Key bleibt die normale manuelle Buchungserfassung verfuegbar.
+
+Nach dem Erstellen einer Buchung generiert TripControl mit OpenAI automatisch eine kurze Reise-Summary und speichert sie direkt an der Reise. Bei Bearbeitungen oder anderen Aenderungen wird die Summary bewusst nicht neu erstellt.
 
 ## Hosting-Pfade
 

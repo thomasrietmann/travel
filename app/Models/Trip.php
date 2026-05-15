@@ -40,6 +40,7 @@ class Trip extends Model
         'end_date',
         'status',
         'notes',
+        'summary',
     ];
 
     protected function casts(): array

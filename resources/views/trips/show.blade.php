@@ -69,6 +69,13 @@
         </div>
     </section>
 
+    @if ($trip->summary)
+        <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-semibold">Reise-Summary</h2>
+            <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ $trip->summary }}</p>
+        </section>
+    @endif
+
     @if ($trip->notes)
         <section class="mb-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <h2 class="text-lg font-semibold">Notizen</h2>
