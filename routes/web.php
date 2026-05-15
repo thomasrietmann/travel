@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentOverviewController;
 use App\Http\Controllers\OpenTasksController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TripController;
 use App\Http\Controllers\TripShareController;
@@ -20,6 +21,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/tasks', OpenTasksController::class)->name('tasks.index');
     Route::get('/documents', DocumentOverviewController::class)->name('documents.index');
     Route::get('/countdown', CountdownController::class)->name('countdown.index');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::post('/settings/email-aliases', [SettingsController::class, 'storeEmailAlias'])->name('settings.email-aliases.store');
+    Route::delete('/settings/email-aliases/{alias}', [SettingsController::class, 'destroyEmailAlias'])->name('settings.email-aliases.destroy');
 
     Route::resource('trips', TripController::class);
     Route::post('/trips/{trip}/shares', [TripShareController::class, 'store'])->name('trips.shares.store');

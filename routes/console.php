@@ -46,3 +46,14 @@ Artisan::command('documents:migrate-private', function () {
         $this->warn("{$missing} Dokumente hatten keine auffindbare Datei.");
     }
 })->purpose('Move existing document uploads from public to private storage');
+
+Artisan::command('mail:import {--limit= : Maximale Anzahl Mails fuer diesen Lauf}', function () {
+    $stats = app(\App\Services\IncomingMailImporter::class)->import((int) ($this->option('limit') ?: 0));
+
+    $this->info("{$stats['imported']} Mails importiert.");
+    $this->info("{$stats['ignored']} Mails ignoriert.");
+
+    if ($stats['failed'] > 0) {
+        $this->warn("{$stats['failed']} Mails konnten nicht importiert werden.");
+    }
+})->purpose('Import forwarded travel mails from the configured mailbox');

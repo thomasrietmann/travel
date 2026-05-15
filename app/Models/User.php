@@ -44,6 +44,11 @@ class User extends Authenticatable
         return $this->belongsToMany(Trip::class)->withTimestamps();
     }
 
+    public function emailAliases(): HasMany
+    {
+        return $this->hasMany(UserEmailAlias::class);
+    }
+
     public function ensureCountdownShareToken(): string
     {
         if ($this->countdown_share_token) {

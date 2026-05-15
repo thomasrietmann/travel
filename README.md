@@ -29,6 +29,21 @@ OPENAI_SUMMARY_MODEL=gpt-5.4-mini
 OPENAI_TIMEOUT=90
 ```
 
+Optional fuer den Mail-Import ueber `travel@aufbollen.ch`:
+
+```dotenv
+MAIL_IMPORT_ENABLED=true
+MAIL_IMPORT_RECIPIENT=travel@aufbollen.ch
+MAIL_IMPORT_IMAP_MAILBOX="{imap.example.com:993/imap/ssl}INBOX"
+MAIL_IMPORT_IMAP_USERNAME=travel@aufbollen.ch
+MAIL_IMPORT_IMAP_PASSWORD=
+MAIL_IMPORT_IMAP_SEARCH=UNSEEN
+MAIL_IMPORT_MAX_MESSAGES=10
+MAIL_IMPORT_MARK_SEEN=true
+```
+
+Der Mail-Import benoetigt die PHP-IMAP-Erweiterung. Das Passwort des Mailkontos wird nur im `.env` hinterlegt und nicht im Code gespeichert.
+
 TripControl nutzt Blade und Tailwind CSS ueber den offiziellen CDN-Modus fuer dieses schlanke MVP. Es ist deshalb kein Node/NPM-Build notwendig.
 
 ## 2. Migration + Seeding
@@ -78,6 +93,24 @@ Wenn `OPENAI_API_KEY` gesetzt ist, kann auf der Reise-Detailseite unter "Buchung
 Ohne API-Key bleibt die normale manuelle Buchungserfassung verfuegbar.
 
 Nach dem Erstellen einer Buchung generiert TripControl mit OpenAI automatisch eine kurze Reise-Summary und speichert sie direkt an der Reise. Bei Bearbeitungen oder anderen Aenderungen wird die Summary bewusst nicht neu erstellt.
+
+## Mail-Import
+
+Benutzer koennen Buchungs- oder Reise-Mails aus ihrer persoenlichen Mailbox an `travel@aufbollen.ch` weiterleiten. TripControl erkennt den Benutzer anhand der Absenderadresse. Die Login-Adresse zaehlt automatisch; weitere persoenliche Adressen koennen unter "Einstellungen" erfasst werden.
+
+Der Import wird per Artisan-Command gestartet:
+
+```bash
+php artisan mail:import
+```
+
+Optional mit Limit:
+
+```bash
+php artisan mail:import --limit=5
+```
+
+TripControl liest ungelesene Mails aus der konfigurierten IMAP-Mailbox, wertet Mailtext und Anhaenge mit OpenAI aus und erstellt daraus eine Buchung. Wenn keine passende bestehende Reise erkannt wird, wird eine neue Reise angelegt. Importierte Mails werden anhand ihrer Message-ID protokolliert, damit sie nicht doppelt verarbeitet werden.
 
 ## Hosting-Pfade
 

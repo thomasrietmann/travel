@@ -25,6 +25,7 @@
                     <a href="{{ route('tasks.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('tasks.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Tasks</a>
                     <a href="{{ route('documents.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('documents.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Dokumente</a>
                     <a href="{{ route('countdown.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('countdown.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Countdown</a>
+                    <a href="{{ route('settings.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('settings.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Einstellungen</a>
                     <a href="{{ route('trips.create') }}" class="rounded-md bg-slate-950 px-3 py-2 font-medium text-white hover:bg-slate-800">Neue Reise</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
@@ -44,6 +45,7 @@
                     <a href="{{ route('tasks.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('tasks.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Tasks</a>
                     <a href="{{ route('documents.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('documents.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Dokumente</a>
                     <a href="{{ route('countdown.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('countdown.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Countdown</a>
+                    <a href="{{ route('settings.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('settings.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Einstellungen</a>
                     <a href="{{ route('trips.create') }}" class="rounded-md bg-slate-950 px-3 py-2 font-medium text-white hover:bg-slate-800">Neue Reise</a>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
