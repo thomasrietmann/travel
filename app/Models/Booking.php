@@ -42,7 +42,7 @@ class Booking extends Model
         'flight' => '✈',
         'hotel' => '⌂',
         'camper' => '▤',
-        'car' => '▰',
+        'car' => '🚗',
         'ticket' => '▥',
         'transport' => '↔',
         'activity' => '◇',
