@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingImportController;
 use App\Http\Controllers\CountdownController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
@@ -20,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('trips', TripController::class);
     Route::post('/trips/{trip}/shares', [TripShareController::class, 'store'])->name('trips.shares.store');
     Route::delete('/trips/{trip}/shares/{user}', [TripShareController::class, 'destroy'])->name('trips.shares.destroy');
+    Route::post('/trips/{trip}/bookings/import', [BookingImportController::class, 'store'])->name('trips.bookings.import');
     Route::resource('trips.bookings', BookingController::class)->shallow()->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('trips.tasks', TaskController::class)->shallow()->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');

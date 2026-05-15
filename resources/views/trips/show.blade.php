@@ -77,9 +77,28 @@
     @endif
 
     <section id="bookings" class="mb-8 rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div class="flex items-center justify-between border-b border-slate-200 p-5">
-            <h2 class="text-lg font-semibold">Buchungen</h2>
+        <div class="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="text-lg font-semibold">Buchungen</h2>
+                <p class="mt-1 text-sm text-slate-500">Dokument hochladen und automatisch als Buchung erfassen.</p>
+            </div>
             <a href="{{ route('trips.bookings.create', $trip) }}" class="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">Neue Buchung</a>
+        </div>
+        <div class="border-b border-slate-200 bg-slate-50 p-5">
+            <form method="POST" action="{{ route('trips.bookings.import', $trip) }}" enctype="multipart/form-data" data-booking-import-form>
+                @csrf
+                <label for="booking_document" data-booking-dropzone class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center transition hover:border-slate-500 hover:bg-slate-50">
+                    <span class="text-sm font-semibold text-slate-950">PDF, Screenshot oder Bild hierher ziehen</span>
+                    <span class="mt-1 text-sm text-slate-500">oder klicken und Datei auswählen. Die AI erstellt daraus eine Buchung mit Dokumentanhang.</span>
+                    <span data-booking-file-name class="mt-3 hidden rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700"></span>
+                </label>
+                <input id="booking_document" name="booking_document" type="file" accept=".pdf,image/jpeg,image/png,image/webp" class="sr-only" data-booking-file-input>
+                @error('booking_document') <p class="mt-2 text-sm text-red-600">{{ $message }}</p> @enderror
+                <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p class="text-xs text-slate-500">Erlaubt sind PDF, JPG, PNG und WebP bis 15 MB.</p>
+                    <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Mit AI erfassen</button>
+                </div>
+            </form>
         </div>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
@@ -231,4 +250,48 @@
             </div>
         </div>
     </section>
+
+    <script>
+        document.querySelectorAll('[data-booking-import-form]').forEach((form) => {
+            const input = form.querySelector('[data-booking-file-input]');
+            const dropzone = form.querySelector('[data-booking-dropzone]');
+            const fileName = form.querySelector('[data-booking-file-name]');
+
+            const showFile = () => {
+                if (!input.files.length) {
+                    fileName.classList.add('hidden');
+                    fileName.textContent = '';
+                    return;
+                }
+
+                fileName.textContent = input.files[0].name;
+                fileName.classList.remove('hidden');
+            };
+
+            input.addEventListener('change', showFile);
+
+            ['dragenter', 'dragover'].forEach((eventName) => {
+                dropzone.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    dropzone.classList.add('border-slate-900', 'bg-slate-50');
+                });
+            });
+
+            ['dragleave', 'drop'].forEach((eventName) => {
+                dropzone.addEventListener(eventName, (event) => {
+                    event.preventDefault();
+                    dropzone.classList.remove('border-slate-900', 'bg-slate-50');
+                });
+            });
+
+            dropzone.addEventListener('drop', (event) => {
+                if (!event.dataTransfer.files.length) {
+                    return;
+                }
+
+                input.files = event.dataTransfer.files;
+                showFile();
+            });
+        });
+    </script>
 @endsection

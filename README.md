@@ -20,6 +20,14 @@ touch database/database.sqlite
 php artisan storage:link
 ```
 
+Optional fuer den AI-Buchungsimport:
+
+```dotenv
+OPENAI_API_KEY=
+OPENAI_BOOKING_MODEL=gpt-5.4-mini
+OPENAI_TIMEOUT=90
+```
+
 TripControl nutzt Blade und Tailwind CSS ueber den offiziellen CDN-Modus fuer dieses schlanke MVP. Es ist deshalb kein Node/NPM-Build notwendig.
 
 ## 2. Migration + Seeding
@@ -60,6 +68,13 @@ Passwort: password
 - Export einer Reiseuebersicht als PDF
 - Kalenderansicht fuer Deadlines und Reisedaten
 - Mehrere Reisende oder Familienmitglieder pro Reise
+- AI-Import fuer Buchungen weiter verfeinern, z.B. Vorpruefung statt direkter Anlage
+
+## AI-Buchungsimport
+
+Wenn `OPENAI_API_KEY` gesetzt ist, kann auf der Reise-Detailseite unter "Buchungen" ein PDF, Screenshot oder Bild hochgeladen werden. TripControl sendet die Datei an die OpenAI Responses API, liest daraus strukturierte Buchungsdaten aus, erstellt die Buchung und speichert die Datei als Dokumentanhang.
+
+Ohne API-Key bleibt die normale manuelle Buchungserfassung verfuegbar.
 
 ## Waehrungskurse
 
