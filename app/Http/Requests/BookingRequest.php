@@ -32,8 +32,15 @@ class BookingRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'document_title' => ['nullable', 'string', 'max:255'],
             'document_type' => ['nullable', Rule::in(Document::TYPES)],
-            'document_file' => ['nullable', 'file', 'max:10240'],
+            'document_file' => ['nullable', 'file', 'mimes:'.DocumentRequest::ALLOWED_FILE_TYPES, 'max:10240'],
             'document_notes' => ['nullable', 'string'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'document_file.mimes' => 'Erlaubt sind PDF, JPG, PNG und WebP.',
         ];
     }
 }

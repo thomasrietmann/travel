@@ -8,6 +8,8 @@ use Illuminate\Validation\Rule;
 
 class DocumentRequest extends FormRequest
 {
+    public const ALLOWED_FILE_TYPES = 'pdf,jpg,jpeg,png,webp';
+
     public function authorize(): bool
     {
         return true;
@@ -20,7 +22,7 @@ class DocumentRequest extends FormRequest
                 'booking_id' => ['nullable', 'integer', 'exists:bookings,id'],
                 'title' => ['nullable', 'string', 'max:255'],
                 'files' => ['required', 'array', 'min:1', 'max:10'],
-                'files.*' => ['file', 'max:10240'],
+                'files.*' => ['file', 'mimes:'.self::ALLOWED_FILE_TYPES, 'max:10240'],
                 'document_type' => ['required', Rule::in(Document::TYPES)],
                 'notes' => ['nullable', 'string'],
             ];
@@ -29,9 +31,17 @@ class DocumentRequest extends FormRequest
         return [
             'booking_id' => ['nullable', 'integer', 'exists:bookings,id'],
             'title' => ['required', 'string', 'max:255'],
-            'file' => ['nullable', 'file', 'max:10240'],
+            'file' => ['nullable', 'file', 'mimes:'.self::ALLOWED_FILE_TYPES, 'max:10240'],
             'document_type' => ['required', Rule::in(Document::TYPES)],
             'notes' => ['nullable', 'string'],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'files.*.mimes' => 'Erlaubt sind PDF, JPG, PNG und WebP.',
+            'file.mimes' => 'Erlaubt sind PDF, JPG, PNG und WebP.',
         ];
     }
 }

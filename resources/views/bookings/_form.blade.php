@@ -159,6 +159,7 @@
             <div class="md:col-span-2">
                 <label for="document_file" class="block text-sm font-medium text-slate-700">Datei</label>
                 <input id="document_file" name="document_file" type="file" class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800">
+                <p class="mt-1 text-xs text-slate-500">Erlaubt sind PDF, JPG, PNG und WebP bis 10 MB.</p>
                 @error('document_file') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
 

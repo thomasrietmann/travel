@@ -93,6 +93,12 @@ FILESYSTEM_LOCAL_ROOT=/home/httpd/vhosts/example.ch/travel.git/storage/app/priva
 FILESYSTEM_PUBLIC_ROOT=/home/httpd/vhosts/example.ch/travel.git/storage/app/public
 ```
 
+Bestehende Dokumente aus frueheren Versionen koennen vom public Storage in den privaten Storage verschoben werden:
+
+```bash
+php artisan documents:migrate-private
+```
+
 ## Waehrungskurse
 
 Die App rechnet Buchungen mit festen Kursen in CHF um. Standardkurse liegen in `config/exchange.php`.

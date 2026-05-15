@@ -39,7 +39,7 @@
             <input id="file" name="file" type="file" class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800">
         @else
             <input id="files" name="files[]" type="file" multiple required class="mt-1 block w-full text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-950 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-slate-800">
-            <p class="mt-1 text-xs text-slate-500">Bis zu 10 Dateien gleichzeitig, maximal 10 MB pro Datei.</p>
+            <p class="mt-1 text-xs text-slate-500">Bis zu 10 Dateien gleichzeitig, maximal 10 MB pro Datei. Erlaubt sind PDF, JPG, PNG und WebP.</p>
         @endif
         @if ($document->exists)
             <p class="mt-1 text-xs text-slate-500">Leer lassen, um die bestehende Datei zu behalten.</p>

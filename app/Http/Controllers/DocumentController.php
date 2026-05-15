@@ -13,6 +13,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
+    private const DOCUMENT_DISK = 'local';
+    private const LEGACY_DOCUMENT_DISK = 'public';
+
     public function create(Trip $trip): View
     {
         $this->authorize('update', $trip);
@@ -41,7 +44,7 @@ class DocumentController extends Controller
             $trip->documents()->create([
                 'booking_id' => $validated['booking_id'] ?? null,
                 'title' => $this->documentTitle($validated['title'] ?? null, $file->getClientOriginalName(), count($files)),
-                'file_path' => $file->store("documents/{$trip->id}", 'public'),
+                'file_path' => $file->store("documents/{$trip->id}", self::DOCUMENT_DISK),
                 'document_type' => $validated['document_type'],
                 'notes' => $validated['notes'] ?? null,
             ]);
@@ -68,7 +71,8 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        abort_unless(Storage::disk('public')->exists($document->file_path), 404);
+        $disk = $this->documentDisk($document);
+        abort_unless($disk, 404);
 
         $extension = pathinfo($document->file_path, PATHINFO_EXTENSION);
         $fileName = Str::slug($document->title) ?: pathinfo($document->file_path, PATHINFO_FILENAME);
@@ -77,7 +81,7 @@ class DocumentController extends Controller
             $fileName .= ".{$extension}";
         }
 
-        return Storage::disk('public')->download($document->file_path, $fileName);
+        return Storage::disk($disk)->download($document->file_path, $fileName);
     }
 
     public function update(DocumentRequest $request, Document $document): RedirectResponse
@@ -92,8 +96,8 @@ class DocumentController extends Controller
         );
 
         if ($request->hasFile('file')) {
-            Storage::disk('public')->delete($document->file_path);
-            $validated['file_path'] = $request->file('file')->store("documents/{$document->trip_id}", 'public');
+            Storage::disk($this->documentDisk($document) ?? self::DOCUMENT_DISK)->delete($document->file_path);
+            $validated['file_path'] = $request->file('file')->store("documents/{$document->trip_id}", self::DOCUMENT_DISK);
         }
 
         unset($validated['file']);
@@ -107,7 +111,7 @@ class DocumentController extends Controller
         $this->authorize('delete', $document);
 
         $trip = $document->trip;
-        Storage::disk('public')->delete($document->file_path);
+        Storage::disk($this->documentDisk($document) ?? self::DOCUMENT_DISK)->delete($document->file_path);
         $document->delete();
 
         return redirect()->route('trips.show', $trip)->with('status', 'Dokument wurde geloescht.');
@@ -120,5 +124,18 @@ class DocumentController extends Controller
         }
 
         return pathinfo($originalName, PATHINFO_FILENAME) ?: 'Dokument';
+    }
+
+    private function documentDisk(Document $document): ?string
+    {
+        if (Storage::disk(self::DOCUMENT_DISK)->exists($document->file_path)) {
+            return self::DOCUMENT_DISK;
+        }
+
+        if (Storage::disk(self::LEGACY_DOCUMENT_DISK)->exists($document->file_path)) {
+            return self::LEGACY_DOCUMENT_DISK;
+        }
+
+        return null;
     }
 }

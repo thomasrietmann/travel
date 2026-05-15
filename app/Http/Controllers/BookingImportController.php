@@ -38,7 +38,7 @@ class BookingImportController extends Controller
                 $trip->documents()->create([
                     'booking_id' => $booking->id,
                     'title' => $this->clean($extracted['document_title'] ?? '') ?: $booking->title,
-                    'file_path' => $file->store("documents/{$trip->id}", 'public'),
+                    'file_path' => $file->store("documents/{$trip->id}", 'local'),
                     'document_type' => in_array($extracted['document_type'] ?? '', Document::TYPES, true) ? $extracted['document_type'] : 'confirmation',
                     'notes' => 'Automatisch aus Buchungsimport erstellt.',
                 ]);

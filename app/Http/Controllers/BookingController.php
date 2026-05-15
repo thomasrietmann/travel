@@ -82,7 +82,7 @@ class BookingController extends Controller
         $trip->documents()->create([
             'booking_id' => $booking->id,
             'title' => $request->input('document_title') ?: $booking->title,
-            'file_path' => $request->file('document_file')->store("documents/{$trip->id}", 'public'),
+            'file_path' => $request->file('document_file')->store("documents/{$trip->id}", 'local'),
             'document_type' => $request->input('document_type', 'confirmation'),
             'notes' => $request->input('document_notes'),
         ]);
