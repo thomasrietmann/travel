@@ -207,18 +207,35 @@ class IncomingMailImporter
 
     private function writeDocumentFile(string $path, string $contents): void
     {
-        if (Storage::disk('local')->put($path, $contents) && Storage::disk('local')->exists($path)) {
-            return;
+        $stored = Storage::disk('local')->put($path, $contents) && Storage::disk('local')->exists($path);
+
+        foreach ($this->documentStoragePaths($path) as $absolutePath) {
+            try {
+                File::ensureDirectoryExists(dirname($absolutePath));
+
+                if (File::put($absolutePath, $contents) !== false && File::exists($absolutePath)) {
+                    $stored = true;
+                }
+            } catch (Throwable) {
+                // Try all known storage roots before failing the import.
+            }
         }
 
-        $absolutePath = Storage::disk('local')->path($path);
-        File::ensureDirectoryExists(dirname($absolutePath));
-
-        if (File::put($absolutePath, $contents) !== false && File::exists($absolutePath)) {
+        if ($stored) {
             return;
         }
 
         throw new RuntimeException('Mail-Anhang konnte nicht gespeichert werden.');
+    }
+
+    private function documentStoragePaths(string $path): array
+    {
+        return array_values(array_unique([
+            Storage::disk('local')->path($path),
+            storage_path('app/private/'.$path),
+            base_path('storage/app/private/'.$path),
+            '/travel.git/storage/app/private/'.$path,
+        ]));
     }
 
     private function findUserBySender(string $email): ?User
