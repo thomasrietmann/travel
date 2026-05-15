@@ -53,3 +53,14 @@
         @error('notes') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const startDate = document.getElementById('start_date');
+        const endDate = document.getElementById('end_date');
+
+        startDate?.addEventListener('change', () => {
+            endDate.value = startDate.value;
+        });
+    });
+</script>

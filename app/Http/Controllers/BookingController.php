@@ -14,7 +14,13 @@ class BookingController extends Controller
     {
         $this->authorize('update', $trip);
 
-        return view('bookings.create', ['trip' => $trip, 'booking' => new Booking()]);
+        return view('bookings.create', [
+            'trip' => $trip,
+            'booking' => new Booking([
+                'start_date' => $trip->start_date,
+                'end_date' => $trip->start_date,
+            ]),
+        ]);
     }
 
     public function store(BookingRequest $request, Trip $trip): RedirectResponse
