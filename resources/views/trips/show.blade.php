@@ -269,23 +269,58 @@
             const input = form.querySelector('[data-booking-file-input]');
             const dropzone = form.querySelector('[data-booking-dropzone]');
             const fileName = form.querySelector('[data-booking-file-name]');
+            let selectedFiles = [];
+
+            const fileKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
+
+            const syncInput = () => {
+                if (typeof DataTransfer !== 'function') {
+                    return;
+                }
+
+                const transfer = new DataTransfer();
+
+                selectedFiles.slice(0, 10).forEach((file) => {
+                    transfer.items.add(file);
+                });
+
+                input.files = transfer.files;
+            };
+
+            const addFiles = (files) => {
+                const existing = new Set(selectedFiles.map(fileKey));
+
+                Array.from(files).forEach((file) => {
+                    const key = fileKey(file);
+
+                    if (!existing.has(key) && selectedFiles.length < 10) {
+                        selectedFiles.push(file);
+                        existing.add(key);
+                    }
+                });
+
+                syncInput();
+                showFile();
+            };
 
             const showFile = () => {
-                if (!input.files.length) {
+                if (!selectedFiles.length) {
                     fileName.classList.add('hidden');
                     fileName.textContent = '';
                     return;
                 }
 
-                const names = Array.from(input.files).map((file) => file.name);
+                const names = selectedFiles.map((file) => file.name);
 
-                fileName.textContent = input.files.length === 1
+                fileName.textContent = selectedFiles.length === 1
                     ? names[0]
-                    : `${input.files.length} Dateien: ${names.slice(0, 3).join(', ')}${names.length > 3 ? ' ...' : ''}`;
+                    : `${selectedFiles.length} Dateien: ${names.slice(0, 3).join(', ')}${names.length > 3 ? ' ...' : ''}`;
                 fileName.classList.remove('hidden');
             };
 
-            input.addEventListener('change', showFile);
+            input.addEventListener('change', () => {
+                addFiles(input.files);
+            });
 
             ['dragenter', 'dragover'].forEach((eventName) => {
                 dropzone.addEventListener(eventName, (event) => {
@@ -306,19 +341,7 @@
                     return;
                 }
 
-                if (typeof DataTransfer === 'function') {
-                    const transfer = new DataTransfer();
-
-                    Array.from(event.dataTransfer.files).slice(0, 10).forEach((file) => {
-                        transfer.items.add(file);
-                    });
-
-                    input.files = transfer.files;
-                } else {
-                    input.files = event.dataTransfer.files;
-                }
-
-                showFile();
+                addFiles(event.dataTransfer.files);
             });
         });
     </script>
