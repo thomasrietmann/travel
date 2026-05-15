@@ -40,9 +40,9 @@ class Booking extends Model
     ];
     public const CATEGORY_ICONS = [
         'flight' => '✈',
-        'hotel' => '▣',
+        'hotel' => '⌂',
         'camper' => '▤',
-        'car' => '◆',
+        'car' => '▰',
         'ticket' => '▥',
         'transport' => '↔',
         'activity' => '◇',
