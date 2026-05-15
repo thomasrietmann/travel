@@ -81,6 +81,7 @@ Ohne API-Key bleibt die normale manuelle Buchungserfassung verfuegbar.
 Auf Hostings mit Chroot- oder Alias-Pfaden koennen Laravel-Storage-Pfade per `.env` absolut gesetzt werden:
 
 ```dotenv
+VIEW_PATH=/home/httpd/vhosts/example.ch/travel.git/resources/views
 VIEW_COMPILED_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/framework/views
 LOG_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/logs/laravel.log
 SESSION_FILES_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/framework/sessions
