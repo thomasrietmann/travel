@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Booking;
+use App\Models\Document;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,6 +30,10 @@ class BookingRequest extends FormRequest
             'due_date' => ['nullable', 'date'],
             'cancellation_deadline' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
+            'document_title' => ['nullable', 'string', 'max:255'],
+            'document_type' => ['nullable', Rule::in(Document::TYPES)],
+            'document_file' => ['nullable', 'file', 'max:10240'],
+            'document_notes' => ['nullable', 'string'],
         ];
     }
 }

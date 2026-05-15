@@ -27,7 +27,8 @@ class BookingController extends Controller
     {
         $this->authorize('update', $trip);
 
-        $trip->bookings()->create($request->validated());
+        $booking = $trip->bookings()->create($this->bookingData($request));
+        $this->storeDocument($request, $trip, $booking);
 
         return redirect()->route('trips.show', $trip)->with('status', 'Buchung wurde erstellt.');
     }
@@ -36,14 +37,18 @@ class BookingController extends Controller
     {
         $this->authorize('update', $booking);
 
-        return view('bookings.edit', ['trip' => $booking->trip, 'booking' => $booking]);
+        return view('bookings.edit', [
+            'trip' => $booking->trip,
+            'booking' => $booking->load('documents'),
+        ]);
     }
 
     public function update(BookingRequest $request, Booking $booking): RedirectResponse
     {
         $this->authorize('update', $booking);
 
-        $booking->update($request->validated());
+        $booking->update($this->bookingData($request));
+        $this->storeDocument($request, $booking->trip, $booking);
 
         return redirect()->route('trips.show', $booking->trip)->with('status', 'Buchung wurde aktualisiert.');
     }
@@ -56,5 +61,27 @@ class BookingController extends Controller
         $booking->delete();
 
         return redirect()->route('trips.show', $trip)->with('status', 'Buchung wurde geloescht.');
+    }
+
+    private function bookingData(BookingRequest $request): array
+    {
+        return collect($request->validated())
+            ->except(['document_title', 'document_type', 'document_file', 'document_notes'])
+            ->all();
+    }
+
+    private function storeDocument(BookingRequest $request, Trip $trip, Booking $booking): void
+    {
+        if (! $request->hasFile('document_file')) {
+            return;
+        }
+
+        $trip->documents()->create([
+            'booking_id' => $booking->id,
+            'title' => $request->input('document_title') ?: $booking->title,
+            'file_path' => $request->file('document_file')->store("documents/{$trip->id}", 'public'),
+            'document_type' => $request->input('document_type', 'confirmation'),
+            'notes' => $request->input('document_notes'),
+        ]);
     }
 }
