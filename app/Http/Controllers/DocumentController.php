@@ -69,12 +69,15 @@ class DocumentController extends Controller
         ]);
     }
 
-    public function download(Document $document): BinaryFileResponse|StreamedResponse
+    public function download(Document $document): BinaryFileResponse|RedirectResponse|StreamedResponse
     {
         $this->authorize('view', $document);
 
         $location = $this->documentLocation($document);
-        abort_unless($location, 404);
+
+        if (! $location) {
+            return back()->with('error', 'Datei wurde nicht gefunden. Geprüft: '.$this->checkedPathsLabel($document));
+        }
 
         $extension = pathinfo($document->file_path, PATHINFO_EXTENSION);
         $fileName = Str::slug($document->title) ?: pathinfo($document->file_path, PATHINFO_FILENAME);
@@ -174,5 +177,14 @@ class DocumentController extends Controller
             base_path('storage/app/private/'.$document->file_path),
             base_path('storage/app/public/'.$document->file_path),
         ];
+    }
+
+    private function checkedPathsLabel(Document $document): string
+    {
+        return implode(' | ', [
+            'local disk: '.$document->file_path,
+            'public disk: '.$document->file_path,
+            ...$this->legacyAbsolutePaths($document),
+        ]);
     }
 }
