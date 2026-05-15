@@ -48,6 +48,18 @@
     </div>
 
     <div>
+        <label for="start_date" class="block text-sm font-medium text-slate-700">Von</label>
+        <input id="start_date" name="start_date" type="date" value="{{ old('start_date', $booking->start_date?->format('Y-m-d')) }}" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+        @error('start_date') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+    </div>
+
+    <div>
+        <label for="end_date" class="block text-sm font-medium text-slate-700">Bis</label>
+        <input id="end_date" name="end_date" type="date" value="{{ old('end_date', $booking->end_date?->format('Y-m-d')) }}" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+        @error('end_date') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+    </div>
+
+    <div>
         <label for="booking_status" class="block text-sm font-medium text-slate-700">Buchungsstatus</label>
         <select id="booking_status" name="booking_status" required class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
             @foreach (Booking::BOOKING_STATUSES as $status)

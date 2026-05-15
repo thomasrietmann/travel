@@ -47,6 +47,8 @@ class Booking extends Model
         'booking_reference',
         'amount',
         'currency',
+        'start_date',
+        'end_date',
         'booking_status',
         'payment_status',
         'due_date',
@@ -58,6 +60,8 @@ class Booking extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'start_date' => 'date',
+            'end_date' => 'date',
             'due_date' => 'date',
             'cancellation_deadline' => 'date',
         ];
@@ -86,5 +90,18 @@ class Booking extends Model
     public function getPaymentStatusLabelAttribute(): string
     {
         return self::PAYMENT_STATUS_LABELS[$this->payment_status] ?? $this->payment_status;
+    }
+
+    public function getDateRangeLabelAttribute(): string
+    {
+        if (! $this->start_date && ! $this->end_date) {
+            return '-';
+        }
+
+        if ($this->start_date && $this->end_date) {
+            return $this->start_date->format('d.m.Y').' - '.$this->end_date->format('d.m.Y');
+        }
+
+        return $this->start_date?->format('d.m.Y') ?? $this->end_date?->format('d.m.Y');
     }
 }

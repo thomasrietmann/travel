@@ -88,6 +88,7 @@
                         <th class="px-5 py-3">Titel</th>
                         <th class="px-5 py-3">Status</th>
                         <th class="px-5 py-3">Referenz</th>
+                        <th class="px-5 py-3">Zeitraum</th>
                         <th class="px-5 py-3">Zahlung</th>
                         <th class="px-5 py-3">Betrag</th>
                         <th class="px-5 py-3">Deadline</th>
@@ -103,6 +104,7 @@
                             </td>
                             <td class="px-5 py-4">{{ $booking->booking_status_label }}</td>
                             <td class="px-5 py-4">{{ $booking->booking_reference ?: '-' }}</td>
+                            <td class="px-5 py-4">{{ $booking->date_range_label }}</td>
                             <td class="px-5 py-4">{{ $booking->payment_status_label }}</td>
                             <td class="px-5 py-4">{{ number_format((float) $booking->amount, 2) }} {{ $booking->currency }}</td>
                             <td class="px-5 py-4">{{ $booking->due_date?->format('d.m.Y') ?? '-' }}</td>
@@ -111,7 +113,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="px-5 py-8 text-center text-slate-500">Keine Buchungen vorhanden.</td></tr>
+                        <tr><td colspan="8" class="px-5 py-8 text-center text-slate-500">Keine Buchungen vorhanden.</td></tr>
                     @endforelse
                 </tbody>
             </table>

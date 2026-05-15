@@ -21,6 +21,8 @@ class BookingFactory extends Factory
             'booking_reference' => fake()->optional()->bothify('??-#####'),
             'amount' => fake()->randomFloat(2, 0, 2500),
             'currency' => fake()->randomElement(Booking::CURRENCIES),
+            'start_date' => fake()->optional()->dateTimeBetween('now', '+6 months'),
+            'end_date' => null,
             'booking_status' => fake()->randomElement(Booking::BOOKING_STATUSES),
             'payment_status' => fake()->randomElement(Booking::PAYMENT_STATUSES),
             'due_date' => fake()->optional()->dateTimeBetween('now', '+6 months'),

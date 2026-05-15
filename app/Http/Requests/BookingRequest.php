@@ -22,6 +22,8 @@ class BookingRequest extends FormRequest
             'booking_reference' => ['nullable', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'currency' => ['required', Rule::in(Booking::CURRENCIES)],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'booking_status' => ['required', Rule::in(Booking::BOOKING_STATUSES)],
             'payment_status' => ['required', Rule::in(Booking::PAYMENT_STATUSES)],
             'due_date' => ['nullable', 'date'],
