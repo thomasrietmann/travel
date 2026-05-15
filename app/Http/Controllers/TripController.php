@@ -31,7 +31,17 @@ class TripController extends Controller
     {
         $this->authorize('view', $trip);
 
-        $trip->load(['bookings.documents', 'tasks', 'documents.booking', 'user', 'sharedUsers']);
+        $trip->load([
+            'bookings' => fn ($query) => $query
+                ->orderByRaw('start_date is null')
+                ->orderBy('start_date')
+                ->orderBy('title'),
+            'bookings.documents',
+            'tasks',
+            'documents.booking',
+            'user',
+            'sharedUsers',
+        ]);
 
         return view('trips.show', ['trip' => $trip]);
     }
