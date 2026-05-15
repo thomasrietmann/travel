@@ -5,6 +5,7 @@ use App\Http\Controllers\BookingImportController;
 use App\Http\Controllers\CountdownController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentOverviewController;
 use App\Http\Controllers\OpenTasksController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TripController;
@@ -16,6 +17,7 @@ Route::get('/', fn () => auth()->check() ? redirect()->route('dashboard') : redi
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/tasks', OpenTasksController::class)->name('tasks.index');
+    Route::get('/documents', DocumentOverviewController::class)->name('documents.index');
     Route::get('/countdown', CountdownController::class)->name('countdown.index');
 
     Route::resource('trips', TripController::class);
