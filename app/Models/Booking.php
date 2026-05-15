@@ -92,6 +92,16 @@ class Booking extends Model
         return self::PAYMENT_STATUS_LABELS[$this->payment_status] ?? $this->payment_status;
     }
 
+    public function getExchangeRateToChfAttribute(): float
+    {
+        return (float) config("exchange.rates_to_chf.{$this->currency}", 1);
+    }
+
+    public function getAmountChfAttribute(): float
+    {
+        return round((float) $this->amount * $this->exchange_rate_to_chf, 2);
+    }
+
     public function getDateRangeLabelAttribute(): string
     {
         if (! $this->start_date && ! $this->end_date) {

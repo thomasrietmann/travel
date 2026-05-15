@@ -111,6 +111,25 @@ class Trip extends Model
         return max(0, $this->total_amount - $this->paid_amount);
     }
 
+    public function getTotalAmountChfAttribute(): float
+    {
+        return round($this->bookings->sum('amount_chf'), 2);
+    }
+
+    public function getPaidAmountChfAttribute(): float
+    {
+        return round($this->bookings
+            ->where('payment_status', 'paid')
+            ->sum('amount_chf'), 2);
+    }
+
+    public function getOpenAmountChfAttribute(): float
+    {
+        return round($this->bookings
+            ->whereIn('payment_status', ['unpaid', 'partially_paid'])
+            ->sum('amount_chf'), 2);
+    }
+
     public function getBookingCompletionPercentageAttribute(): int
     {
         $total = $this->bookings->count();

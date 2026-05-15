@@ -7,9 +7,6 @@
             'yellow' => 'bg-amber-400',
             'red' => 'bg-red-500',
         ][$trip->traffic_light];
-        $totalsByCurrency = $trip->bookings->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
-        $paidByCurrency = $trip->bookings->where('payment_status', 'paid')->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
-        $openByCurrency = $trip->bookings->whereIn('payment_status', ['unpaid', 'partially_paid'])->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
     @endphp
 
     <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -109,7 +106,12 @@
                             <td class="px-5 py-4">{{ $booking->booking_reference ?: '-' }}</td>
                             <td class="px-5 py-4">{{ $booking->date_range_label }}</td>
                             <td class="px-5 py-4">{{ $booking->payment_status_label }}</td>
-                            <td class="px-5 py-4">{{ number_format((float) $booking->amount, 2) }} {{ $booking->currency }}</td>
+                            <td class="px-5 py-4">
+                                <div>{{ number_format((float) $booking->amount, 2) }} {{ $booking->currency }}</div>
+                                @if ($booking->currency !== 'CHF')
+                                    <div class="text-xs text-slate-500">{{ number_format($booking->amount_chf, 2) }} CHF</div>
+                                @endif
+                            </td>
                             <td class="px-5 py-4">{{ $booking->due_date?->format('d.m.Y') ?? '-' }}</td>
                             <td class="px-5 py-4 text-right">
                                 <a href="{{ route('bookings.edit', $booking) }}" class="font-medium text-slate-700 hover:text-slate-950">Bearbeiten</a>
@@ -128,17 +130,18 @@
         <div class="mt-4 grid gap-4 md:grid-cols-3">
             <div>
                 <p class="text-sm text-slate-500">Total</p>
-                <p class="mt-1 font-semibold">@forelse ($totalsByCurrency as $currency => $amount){{ number_format($amount, 2) }} {{ $currency }}@if (! $loop->last), @endif @empty 0.00 @endforelse</p>
+                <p class="mt-1 font-semibold">{{ number_format($trip->total_amount_chf, 2) }} CHF</p>
             </div>
             <div>
                 <p class="text-sm text-slate-500">Bezahlt</p>
-                <p class="mt-1 font-semibold">@forelse ($paidByCurrency as $currency => $amount){{ number_format($amount, 2) }} {{ $currency }}@if (! $loop->last), @endif @empty 0.00 @endforelse</p>
+                <p class="mt-1 font-semibold">{{ number_format($trip->paid_amount_chf, 2) }} CHF</p>
             </div>
             <div>
                 <p class="text-sm text-slate-500">Offen</p>
-                <p class="mt-1 font-semibold">@forelse ($openByCurrency as $currency => $amount){{ number_format($amount, 2) }} {{ $currency }}@if (! $loop->last), @endif @empty 0.00 @endforelse</p>
+                <p class="mt-1 font-semibold">{{ number_format($trip->open_amount_chf, 2) }} CHF</p>
             </div>
         </div>
+        <p class="mt-4 text-xs text-slate-500">Währungsumrechnung mit festen Kursen: {{ config('exchange.source') }}.</p>
     </section>
 
     <section id="tasks" class="mb-8 rounded-lg border border-slate-200 bg-white shadow-sm">

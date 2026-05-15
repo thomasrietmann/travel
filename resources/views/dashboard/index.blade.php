@@ -23,8 +23,6 @@
                         'yellow' => 'bg-amber-400',
                         'red' => 'bg-red-500',
                     ][$trip->traffic_light];
-                    $paidByCurrency = $trip->bookings->where('payment_status', 'paid')->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
-                    $openByCurrency = $trip->bookings->whereIn('payment_status', ['unpaid', 'partially_paid'])->groupBy('currency')->map(fn ($items) => $items->sum('amount'));
                     $cardClass = match (true) {
                         $trip->is_active => 'border-emerald-300 bg-emerald-50 ring-1 ring-emerald-200 hover:-translate-y-0.5 hover:shadow-md',
                         $trip->is_past => 'border-slate-200 bg-slate-100 opacity-70 hover:opacity-85',
@@ -68,23 +66,11 @@
                         </div>
                         <div>
                             <dt class="text-slate-500">Bezahlt</dt>
-                            <dd class="font-semibold">
-                                @forelse ($paidByCurrency as $currency => $amount)
-                                    {{ number_format($amount, 2) }} {{ $currency }}@if (! $loop->last), @endif
-                                @empty
-                                    0.00
-                                @endforelse
-                            </dd>
+                            <dd class="font-semibold">{{ number_format($trip->paid_amount_chf, 2) }} CHF</dd>
                         </div>
                         <div>
                             <dt class="text-slate-500">Offen</dt>
-                            <dd class="font-semibold">
-                                @forelse ($openByCurrency as $currency => $amount)
-                                    {{ number_format($amount, 2) }} {{ $currency }}@if (! $loop->last), @endif
-                                @empty
-                                    0.00
-                                @endforelse
-                            </dd>
+                            <dd class="font-semibold">{{ number_format($trip->open_amount_chf, 2) }} CHF</dd>
                         </div>
                     </dl>
 
@@ -95,5 +81,6 @@
                 </a>
             @endforeach
         </div>
+        <p class="mt-4 text-xs text-slate-500">Währungsumrechnung in CHF mit festen Kursen: {{ config('exchange.source') }}.</p>
     @endif
 @endsection
