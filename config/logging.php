@@ -15,7 +15,8 @@ return [
         ],
         'mail_import' => [
             'driver' => 'single',
-            'path' => storage_path('logs/mail-import.log'),
+            'path' => env('MAIL_IMPORT_LOG_PATH')
+                ?: (env('LOG_PATH') ? dirname(env('LOG_PATH')).'/mail-import.log' : storage_path('logs/mail-import.log')),
             'level' => env('LOG_LEVEL', 'debug'),
         ],
     ],

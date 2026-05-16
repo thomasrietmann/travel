@@ -2,11 +2,11 @@
 
 use App\Models\Document;
 use App\Models\User;
+use App\Services\MailImportLogger;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 Artisan::command('inspire', function () {
@@ -51,11 +51,13 @@ Artisan::command('documents:migrate-private', function () {
 })->purpose('Move existing document uploads from public to private storage');
 
 Artisan::command('mail:import {--limit= : Maximale Anzahl Mails fuer diesen Lauf}', function () {
-    Log::channel('mail_import')->info('Email-Import per Artisan wurde gestartet.');
+    $logger = app(MailImportLogger::class);
+
+    $logger->info('Email-Import per Artisan wurde gestartet.');
 
     $stats = app(\App\Services\IncomingMailImporter::class)->import((int) ($this->option('limit') ?: 0));
 
-    Log::channel('mail_import')->info('Email-Import per Artisan wurde abgeschlossen.', $stats);
+    $logger->info('Email-Import per Artisan wurde abgeschlossen.', $stats);
 
     $this->info("{$stats['imported']} Mails importiert.");
     $this->info("{$stats['ignored']} Mails ignoriert.");

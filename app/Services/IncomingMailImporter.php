@@ -11,7 +11,6 @@ use App\Models\UserEmailAlias;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -24,6 +23,7 @@ class IncomingMailImporter
         private readonly MailAiExtractor $extractor,
         private readonly TripSummaryGenerator $summaryGenerator,
         private readonly DocumentStorage $documentStorage,
+        private readonly MailImportLogger $logger,
     ) {}
 
     public function import(int $limit = 0): array
@@ -61,7 +61,7 @@ class IncomingMailImporter
                     $result = $this->importMessage($imap, (int) $messageNumber);
                     $stats[$result]++;
                 } catch (Throwable $exception) {
-                    Log::channel('mail_import')->error('Mail konnte nicht importiert werden.', [
+                    $this->logger->error('Mail konnte nicht importiert werden.', [
                         'message_number' => $messageNumber,
                         'message' => $exception->getMessage(),
                     ]);
@@ -121,7 +121,7 @@ class IncomingMailImporter
                 'processed_at' => now(),
             ]);
 
-            Log::channel('mail_import')->info('Mail wurde ignoriert, da kein Benutzer gefunden wurde.', [
+            $this->logger->info('Mail wurde ignoriert, da kein Benutzer gefunden wurde.', [
                 'sender_email' => $senderEmail,
                 'subject' => $subject,
             ]);
@@ -170,7 +170,7 @@ class IncomingMailImporter
                 $this->regenerateSummary($trip);
             }
 
-            Log::channel('mail_import')->info('Mail wurde importiert.', [
+            $this->logger->info('Mail wurde importiert.', [
                 'user_id' => $user->id,
                 'trip_id' => $trip?->id,
                 'booking_id' => $booking?->id,
@@ -187,7 +187,7 @@ class IncomingMailImporter
                 'processed_at' => now(),
             ]);
 
-            Log::channel('mail_import')->error('Mailverarbeitung ist fehlgeschlagen.', [
+            $this->logger->error('Mailverarbeitung ist fehlgeschlagen.', [
                 'imported_mail_id' => $importedMail->id,
                 'message' => $exception->getMessage(),
             ]);
