@@ -8,6 +8,8 @@ use App\Models\ImportedMail;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\UserEmailAlias;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -142,7 +144,7 @@ class IncomingMailImporter
                 }
 
                 if (! $this->hasPdfAttachment($mail['attachments'])) {
-                    $this->storeMailPdfDocument($trip, $booking, $subject, $mail['body']);
+                    $this->storeMailPdfDocument($trip, $booking, $subject, $mail);
                 }
 
                 $importedMail->update([
@@ -246,10 +248,10 @@ class IncomingMailImporter
         ]);
     }
 
-    private function storeMailPdfDocument(Trip $trip, ?Booking $booking, string $subject, string $body): void
+    private function storeMailPdfDocument(Trip $trip, ?Booking $booking, string $subject, array $mail): void
     {
         $path = 'documents/'.$trip->id.'/'.Str::random(40).'.pdf';
-        $this->writeDocumentFile($path, $this->mailPdf($subject, $body));
+        $this->writeDocumentFile($path, $this->mailPdf($subject, $mail));
 
         $trip->documents()->create([
             'booking_id' => $booking?->id,
@@ -272,95 +274,69 @@ class IncomingMailImporter
         );
     }
 
-    private function mailPdf(string $subject, string $body): string
+    private function mailPdf(string $subject, array $mail): string
     {
-        $text = implode("\n\n", [
-            'TripControl Mailimport',
-            'Betreff: '.($subject ?: '-'),
-            'Importiert am: '.now()->format('d.m.Y H:i'),
-            'Mailinhalt:',
-            trim($body) ?: '-',
-        ]);
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isRemoteEnabled', false);
 
-        $lines = $this->pdfLines($text);
-        $pages = array_chunk($lines, 48) ?: [['-']];
-        $objects = [
-            1 => '<< /Type /Catalog /Pages 2 0 R >>',
-        ];
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($this->mailHtml($subject, $mail), 'UTF-8');
+        $dompdf->setPaper('A4');
+        $dompdf->render();
 
-        $pageObjectIds = [];
-        $nextObjectId = 3;
-        $fontObjectId = 3 + (count($pages) * 2);
-
-        foreach ($pages as $pageLines) {
-            $pageObjectId = $nextObjectId++;
-            $contentObjectId = $nextObjectId++;
-            $pageObjectIds[] = $pageObjectId;
-
-            $objects[$pageObjectId] = "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 {$fontObjectId} 0 R >> >> /MediaBox [0 0 595 842] /Contents {$contentObjectId} 0 R >>";
-            $objects[$contentObjectId] = $this->pdfStream($pageLines);
-        }
-
-        $objects[2] = '<< /Type /Pages /Kids ['.implode(' ', array_map(fn (int $id): string => "{$id} 0 R", $pageObjectIds)).'] /Count '.count($pageObjectIds).' >>';
-        $objects[$fontObjectId] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
-        ksort($objects);
-
-        return $this->pdfDocument($objects);
+        return $dompdf->output();
     }
 
-    private function pdfLines(string $text): array
+    private function mailHtml(string $subject, array $mail): string
     {
-        $text = str_replace(["\r\n", "\r"], "\n", $text);
-        $lines = [];
+        $body = trim((string) ($mail['html_body'] ?: $mail['body']));
 
-        foreach (explode("\n", $text) as $line) {
-            $wrapped = wordwrap(trim($line), 92, "\n", true);
-            array_push($lines, ...explode("\n", $wrapped ?: ' '));
+        if ($body === '') {
+            $body = '<p>-</p>';
+        } elseif (! $mail['html_body']) {
+            $body = '<pre>'.e($body).'</pre>';
         }
 
-        return $lines;
+        $body = $this->sanitizeMailHtml($body);
+        $header = $this->mailPdfHeader($subject);
+
+        if ($mail['html_body'] && preg_match('/<body\b[^>]*>/i', $body)) {
+            return preg_replace('/<body\b[^>]*>/i', '$0'.$header, $body, 1) ?? $body;
+        }
+
+        return '<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    '.$this->mailPdfStyles().'
+</head>
+<body>
+    '.$header.'
+    '.$body.'
+</body>
+</html>';
     }
 
-    private function pdfStream(array $lines): string
+    private function mailPdfHeader(string $subject): string
     {
-        $content = "BT\n/F1 10 Tf\n50 790 Td\n14 TL\n";
-
-        foreach ($lines as $line) {
-            $content .= '('.$this->pdfEscape($line).") Tj\nT*\n";
-        }
-
-        $content .= "ET\n";
-
-        return "<< /Length ".strlen($content)." >>\nstream\n{$content}endstream";
+        return '<div class="tripcontrol-header" style="border-bottom: 1px solid #d1d5db; margin-bottom: 18px; padding-bottom: 10px;">
+            <div class="tripcontrol-title" style="font-size: 18px; font-weight: bold; margin-bottom: 6px;">'.e($subject ?: 'Weitergeleitete Mail').'</div>
+            <div class="tripcontrol-meta" style="color: #6b7280; font-size: 11px;">TripControl Mailimport · '.e(now()->format('d.m.Y H:i')).'</div>
+        </div>';
     }
 
-    private function pdfEscape(string $value): string
+    private function mailPdfStyles(): string
     {
-        $encoded = @iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $value);
-        $encoded = $encoded === false ? $value : $encoded;
-
-        return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $encoded);
-    }
-
-    private function pdfDocument(array $objects): string
-    {
-        $pdf = "%PDF-1.4\n";
-        $offsets = [0 => 0];
-
-        foreach ($objects as $id => $object) {
-            $offsets[$id] = strlen($pdf);
-            $pdf .= "{$id} 0 obj\n{$object}\nendobj\n";
-        }
-
-        $xrefOffset = strlen($pdf);
-        $pdf .= "xref\n0 ".(count($objects) + 1)."\n";
-        $pdf .= "0000000000 65535 f \n";
-
-        for ($id = 1; $id <= count($objects); $id++) {
-            $pdf .= sprintf("%010d 00000 n \n", $offsets[$id]);
-        }
-
-        return $pdf."trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xrefOffset}\n%%EOF\n";
+        return '<style>
+            body { font-family: DejaVu Sans, sans-serif; font-size: 12px; color: #111827; line-height: 1.45; }
+            .tripcontrol-header { border-bottom: 1px solid #d1d5db; margin-bottom: 18px; padding-bottom: 10px; }
+            .tripcontrol-title { font-size: 18px; font-weight: bold; margin-bottom: 6px; }
+            .tripcontrol-meta { color: #6b7280; font-size: 11px; }
+            pre { white-space: pre-wrap; font-family: DejaVu Sans Mono, monospace; font-size: 11px; }
+            table { border-collapse: collapse; max-width: 100%; }
+            img { max-width: 100%; height: auto; }
+        </style>';
     }
 
     private function findUserBySenders(array $emails): ?User
@@ -381,7 +357,7 @@ class IncomingMailImporter
     private function mailContent($imap, int $messageNumber): array
     {
         $structure = imap_fetchstructure($imap, $messageNumber);
-        $result = ['body' => '', 'attachments' => []];
+        $result = ['body' => '', 'html_body' => '', 'attachments' => []];
 
         if ($structure) {
             $this->collectPart($imap, $messageNumber, $structure, '', $result);
@@ -389,6 +365,7 @@ class IncomingMailImporter
 
         return [
             'body' => trim($result['body']),
+            'html_body' => trim($result['html_body']),
             'attachments' => $result['attachments'],
         ];
     }
@@ -424,9 +401,23 @@ class IncomingMailImporter
         }
 
         if (($part->type ?? null) === 0) {
+            if (Str::lower($part->subtype ?? '') === 'html') {
+                $result['html_body'] .= "\n".$body;
+            }
+
             $text = Str::lower($part->subtype ?? '') === 'html' ? trim(strip_tags($body)) : trim($body);
             $result['body'] .= "\n".$text;
         }
+    }
+
+    private function sanitizeMailHtml(string $html): string
+    {
+        $html = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $html) ?? $html;
+        $html = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $html) ?? $html;
+        $html = preg_replace('/\son[a-z]+\s*=\s*(["\']).*?\1/is', '', $html) ?? $html;
+        $html = preg_replace('/\s(href|src)\s*=\s*(["\'])javascript:.*?\2/is', '', $html) ?? $html;
+
+        return $html;
     }
 
     private function partFilename(object $part): ?string

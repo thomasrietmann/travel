@@ -3,6 +3,7 @@
     "type": "project",
     "description": "TripControl - personal travel overview app.",
     "require": {
+        "dompdf/dompdf": "^3.1",
         "php": "^8.3",
         "laravel/framework": "^13.0"
     },
