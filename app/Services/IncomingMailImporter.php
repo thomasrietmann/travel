@@ -369,17 +369,26 @@ class IncomingMailImporter
         $options->set('defaultFont', 'DejaVu Sans');
         $options->set('isRemoteEnabled', false);
 
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($this->mailHtml($subject, $mail), 'UTF-8');
-        $dompdf->setPaper('A4');
-        $dompdf->render();
+        try {
+            $dompdf = new Dompdf($options);
+            $dompdf->loadHtml($this->mailHtml($subject, $mail), 'UTF-8');
+            $dompdf->setPaper('A4');
+            $dompdf->render();
 
-        return $dompdf->output();
+            return $dompdf->output();
+        } catch (Throwable $exception) {
+            $this->logger->error('HTML-Mail konnte nicht als PDF gerendert werden, Fallback-PDF wird verwendet.', [
+                'message' => $exception->getMessage(),
+                'subject' => $subject,
+            ]);
+
+            return $this->fallbackMailPdf($subject, $mail);
+        }
     }
 
     private function fallbackMailPdf(string $subject, array $mail): string
     {
-        $body = trim(strip_tags((string) ($mail['html_body'] ?: $mail['body'])));
+        $body = Str::limit(trim(strip_tags((string) ($mail['html_body'] ?: $mail['body']))), 12000);
         $text = implode("\n\n", [
             'TripControl Mailimport',
             'Betreff: '.($subject ?: '-'),
