@@ -11,6 +11,7 @@ use App\Models\UserEmailAlias;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -59,7 +60,12 @@ class IncomingMailImporter
                 try {
                     $result = $this->importMessage($imap, (int) $messageNumber);
                     $stats[$result]++;
-                } catch (Throwable) {
+                } catch (Throwable $exception) {
+                    Log::channel('mail_import')->error('Mail konnte nicht importiert werden.', [
+                        'message_number' => $messageNumber,
+                        'message' => $exception->getMessage(),
+                    ]);
+
                     $stats['failed']++;
                 }
             }
@@ -115,6 +121,11 @@ class IncomingMailImporter
                 'processed_at' => now(),
             ]);
 
+            Log::channel('mail_import')->info('Mail wurde ignoriert, da kein Benutzer gefunden wurde.', [
+                'sender_email' => $senderEmail,
+                'subject' => $subject,
+            ]);
+
             $this->markSeen($imap, $messageNumber);
 
             return 'ignored';
@@ -159,6 +170,13 @@ class IncomingMailImporter
                 $this->regenerateSummary($trip);
             }
 
+            Log::channel('mail_import')->info('Mail wurde importiert.', [
+                'user_id' => $user->id,
+                'trip_id' => $trip?->id,
+                'booking_id' => $booking?->id,
+                'subject' => $subject,
+            ]);
+
             $this->markSeen($imap, $messageNumber);
 
             return 'imported';
@@ -167,6 +185,11 @@ class IncomingMailImporter
                 'status' => 'failed',
                 'notes' => Str::limit($exception->getMessage(), 2000),
                 'processed_at' => now(),
+            ]);
+
+            Log::channel('mail_import')->error('Mailverarbeitung ist fehlgeschlagen.', [
+                'imported_mail_id' => $importedMail->id,
+                'message' => $exception->getMessage(),
             ]);
 
             $this->markSeen($imap, $messageNumber);

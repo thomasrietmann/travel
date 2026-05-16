@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\MailImportController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\BookingImportController;
 use App\Http\Controllers\CountdownController;
@@ -13,10 +16,19 @@ use App\Http\Controllers\TripController;
 use App\Http\Controllers\TripShareController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', fn () => auth()->check() ? redirect()->route('dashboard') : redirect()->route('login'));
+Route::get('/', fn () => auth()->check()
+    ? redirect()->route(auth()->user()->is_admin ? 'admin.dashboard' : 'dashboard')
+    : redirect()->route('login'));
 Route::get('/shared/countdown/{token}', [CountdownController::class, 'public'])->name('countdown.public');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/', AdminDashboardController::class)->name('dashboard');
+    Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+    Route::get('/mail-import', [MailImportController::class, 'index'])->name('mail-import.index');
+    Route::post('/mail-import', [MailImportController::class, 'store'])->name('mail-import.store');
+});
+
+Route::middleware(['auth', 'not_admin'])->group(function () {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/tasks', OpenTasksController::class)->name('tasks.index');
     Route::get('/documents', DocumentOverviewController::class)->name('documents.index');

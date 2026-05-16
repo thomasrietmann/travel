@@ -1,9 +1,12 @@
 <?php
 
 use App\Models\Document;
+use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 Artisan::command('inspire', function () {
@@ -48,7 +51,11 @@ Artisan::command('documents:migrate-private', function () {
 })->purpose('Move existing document uploads from public to private storage');
 
 Artisan::command('mail:import {--limit= : Maximale Anzahl Mails fuer diesen Lauf}', function () {
+    Log::channel('mail_import')->info('Email-Import per Artisan wurde gestartet.');
+
     $stats = app(\App\Services\IncomingMailImporter::class)->import((int) ($this->option('limit') ?: 0));
+
+    Log::channel('mail_import')->info('Email-Import per Artisan wurde abgeschlossen.', $stats);
 
     $this->info("{$stats['imported']} Mails importiert.");
     $this->info("{$stats['ignored']} Mails ignoriert.");
@@ -57,3 +64,27 @@ Artisan::command('mail:import {--limit= : Maximale Anzahl Mails fuer diesen Lauf
         $this->warn("{$stats['failed']} Mails konnten nicht importiert werden.");
     }
 })->purpose('Import forwarded travel mails from the configured mailbox');
+
+Artisan::command('admin:create {email} {--name=Administrator} {--password= : Passwort fuer den Admin}', function () {
+    $password = $this->option('password') ?: $this->secret('Admin-Passwort');
+
+    if (! $password) {
+        $this->error('Es wurde kein Passwort gesetzt.');
+
+        return 1;
+    }
+
+    $user = User::query()->updateOrCreate(
+        ['email' => $this->argument('email')],
+        [
+            'name' => $this->option('name'),
+            'password' => Hash::make($password),
+            'is_admin' => true,
+            'email_verified_at' => now(),
+        ],
+    );
+
+    $this->info("Admin {$user->email} wurde erstellt oder aktualisiert.");
+
+    return 0;
+})->purpose('Create or update an administrator account');

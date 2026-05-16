@@ -12,7 +12,7 @@
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <div class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <a href="{{ route('dashboard') }}" class="flex items-center">
+            <a href="{{ auth()->check() && auth()->user()->is_admin ? route('admin.dashboard') : route('dashboard') }}" class="flex items-center">
                 <img src="{{ asset('brand/tripcontrol-logo.svg') }}" alt="TripControl" class="h-12 w-auto max-w-[220px] sm:max-w-[280px]">
             </a>
 
@@ -25,12 +25,17 @@
 
             <nav class="hidden items-center justify-end gap-2 text-sm md:flex">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Übersicht</a>
-                    <a href="{{ route('tasks.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('tasks.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Tasks</a>
-                    <a href="{{ route('documents.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('documents.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Dokumente</a>
-                    <a href="{{ route('countdown.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('countdown.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Countdown</a>
-                    <a href="{{ route('settings.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('settings.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Einstellungen</a>
-                    <a href="{{ route('trips.create') }}" class="rounded-md bg-slate-950 px-3 py-2 font-medium text-white hover:bg-slate-800">Neue Reise</a>
+                    @if (auth()->user()->is_admin)
+                        <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('admin.dashboard', 'admin.users.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Benutzer</a>
+                        <a href="{{ route('admin.mail-import.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('admin.mail-import.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Email Import</a>
+                    @else
+                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Übersicht</a>
+                        <a href="{{ route('tasks.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('tasks.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Tasks</a>
+                        <a href="{{ route('documents.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('documents.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Dokumente</a>
+                        <a href="{{ route('countdown.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('countdown.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Countdown</a>
+                        <a href="{{ route('settings.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('settings.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Einstellungen</a>
+                        <a href="{{ route('trips.create') }}" class="rounded-md bg-slate-950 px-3 py-2 font-medium text-white hover:bg-slate-800">Neue Reise</a>
+                    @endif
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button class="rounded-md border border-slate-300 px-3 py-2 font-medium text-slate-700 hover:bg-slate-100">Logout</button>
@@ -45,12 +50,17 @@
         <nav data-mobile-menu class="hidden border-t border-slate-200 px-4 py-3 text-sm md:hidden">
             <div class="flex flex-col gap-1">
                 @auth
-                    <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Übersicht</a>
-                    <a href="{{ route('tasks.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('tasks.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Tasks</a>
-                    <a href="{{ route('documents.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('documents.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Dokumente</a>
-                    <a href="{{ route('countdown.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('countdown.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Countdown</a>
-                    <a href="{{ route('settings.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('settings.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Einstellungen</a>
-                    <a href="{{ route('trips.create') }}" class="rounded-md bg-slate-950 px-3 py-2 font-medium text-white hover:bg-slate-800">Neue Reise</a>
+                    @if (auth()->user()->is_admin)
+                        <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('admin.dashboard', 'admin.users.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Benutzer</a>
+                        <a href="{{ route('admin.mail-import.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('admin.mail-import.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Email Import</a>
+                    @else
+                        <a href="{{ route('dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Übersicht</a>
+                        <a href="{{ route('tasks.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('tasks.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Tasks</a>
+                        <a href="{{ route('documents.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('documents.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Dokumente</a>
+                        <a href="{{ route('countdown.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('countdown.index') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Countdown</a>
+                        <a href="{{ route('settings.index') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('settings.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Einstellungen</a>
+                        <a href="{{ route('trips.create') }}" class="rounded-md bg-slate-950 px-3 py-2 font-medium text-white hover:bg-slate-800">Neue Reise</a>
+                    @endif
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button class="w-full rounded-md border border-slate-300 px-3 py-2 text-left font-medium text-slate-700 hover:bg-slate-100">Logout</button>

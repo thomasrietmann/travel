@@ -17,6 +17,15 @@ class DatabaseSeeder extends Seeder
             'name' => 'TripControl Demo',
             'email' => 'demo@tripcontrol.test',
             'password' => Hash::make('password'),
+            'is_admin' => false,
+            'email_verified_at' => now(),
+        ]);
+
+        User::query()->create([
+            'name' => 'TripControl Admin',
+            'email' => 'admin@tripcontrol.test',
+            'password' => Hash::make('password'),
+            'is_admin' => true,
             'email_verified_at' => now(),
         ]);
 
