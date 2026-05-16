@@ -5,12 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ config('app.name', 'TripControl') }}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ asset('brand/tripcontrol-icon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('brand/tripcontrol-icon.svg') }}">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <div class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <a href="{{ route('dashboard') }}" class="text-xl font-semibold tracking-tight text-slate-950">TripControl</a>
+            <a href="{{ route('dashboard') }}" class="flex items-center">
+                <img src="{{ asset('brand/tripcontrol-logo.svg') }}" alt="TripControl" class="h-12 w-auto max-w-[220px] sm:max-w-[280px]">
+            </a>
 
             <button type="button" data-mobile-menu-button class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 text-slate-700 hover:bg-slate-100 md:hidden" aria-label="Menü öffnen" aria-expanded="false">
                 <span class="sr-only">Menü öffnen</span>
