@@ -8,6 +8,7 @@ use App\Models\ImportedMail;
 use App\Models\Trip;
 use App\Models\User;
 use App\Models\UserEmailAlias;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -78,7 +79,21 @@ class IncomingMailImporter
 
         $messageId = $this->messageId($imap, $messageNumber);
 
-        if (ImportedMail::query()->where('message_id', $messageId)->exists()) {
+        $existingImport = ImportedMail::query()->where('message_id', $messageId)->first();
+
+        if ($existingImport) {
+            if ($existingImport->status === 'processing') {
+                $existingImport->update([
+                    'status' => 'failed',
+                    'notes' => 'Vorheriger Mailimport wurde abgebrochen.',
+                    'processed_at' => now(),
+                ]);
+
+                $this->markSeen($imap, $messageNumber);
+
+                return 'failed';
+            }
+
             $this->markSeen($imap, $messageNumber);
 
             return 'ignored';
@@ -104,37 +119,59 @@ class IncomingMailImporter
             return 'ignored';
         }
 
-        $mail = $this->mailContent($imap, $messageNumber);
-        $extracted = $this->extractor->extract($user, $subject, $mail['body'], $mail['attachments']);
-        $trip = $this->resolveTrip($user, $extracted);
-        $booking = $this->createBooking($trip, $extracted, $subject);
-
-        foreach ($mail['attachments'] as $attachment) {
-            $this->storeDocument($trip, $booking, $attachment, $extracted);
-        }
-
-        if (! $this->hasPdfAttachment($mail['attachments'])) {
-            $this->storeMailPdfDocument($trip, $booking, $subject, $mail['body']);
-        }
-
-        ImportedMail::query()->create([
+        $importedMail = ImportedMail::query()->create([
             'user_id' => $user->id,
-            'trip_id' => $trip->id,
             'message_id' => $messageId,
             'sender_email' => $senderEmail,
             'subject' => $subject,
-            'status' => 'imported',
-            'notes' => $extracted['notes'] ?? null,
-            'processed_at' => now(),
+            'status' => 'processing',
+            'notes' => 'Mail wird verarbeitet.',
         ]);
 
-        if ($booking) {
-            $this->regenerateSummary($trip);
+        try {
+            $mail = $this->mailContent($imap, $messageNumber);
+            $extracted = $this->extractor->extract($user, $subject, $mail['body'], $mail['attachments']);
+            $trip = null;
+            $booking = null;
+
+            DB::transaction(function () use ($user, $subject, $mail, $extracted, $importedMail, &$trip, &$booking): void {
+                $trip = $this->resolveTrip($user, $extracted);
+                $booking = $this->createBooking($trip, $extracted, $subject);
+
+                foreach ($mail['attachments'] as $attachment) {
+                    $this->storeDocument($trip, $booking, $attachment, $extracted);
+                }
+
+                if (! $this->hasPdfAttachment($mail['attachments'])) {
+                    $this->storeMailPdfDocument($trip, $booking, $subject, $mail['body']);
+                }
+
+                $importedMail->update([
+                    'trip_id' => $trip->id,
+                    'status' => 'imported',
+                    'notes' => $extracted['notes'] ?? null,
+                    'processed_at' => now(),
+                ]);
+            });
+
+            if ($booking) {
+                $this->regenerateSummary($trip);
+            }
+
+            $this->markSeen($imap, $messageNumber);
+
+            return 'imported';
+        } catch (Throwable $exception) {
+            $importedMail->update([
+                'status' => 'failed',
+                'notes' => Str::limit($exception->getMessage(), 2000),
+                'processed_at' => now(),
+            ]);
+
+            $this->markSeen($imap, $messageNumber);
+
+            return 'failed';
         }
-
-        $this->markSeen($imap, $messageNumber);
-
-        return 'imported';
     }
 
     private function resolveTrip(User $user, array $data): Trip
