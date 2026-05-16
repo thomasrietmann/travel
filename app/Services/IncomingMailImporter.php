@@ -276,6 +276,10 @@ class IncomingMailImporter
 
     private function mailPdf(string $subject, array $mail): string
     {
+        if (! class_exists(Options::class) || ! class_exists(Dompdf::class)) {
+            return $this->fallbackMailPdf($subject, $mail);
+        }
+
         $options = new Options();
         $options->set('defaultFont', 'DejaVu Sans');
         $options->set('isRemoteEnabled', false);
@@ -286,6 +290,91 @@ class IncomingMailImporter
         $dompdf->render();
 
         return $dompdf->output();
+    }
+
+    private function fallbackMailPdf(string $subject, array $mail): string
+    {
+        $body = trim(strip_tags((string) ($mail['html_body'] ?: $mail['body'])));
+        $text = implode("\n\n", [
+            'TripControl Mailimport',
+            'Betreff: '.($subject ?: '-'),
+            'Importiert am: '.now()->format('d.m.Y H:i'),
+            'Mailinhalt:',
+            $body ?: '-',
+        ]);
+
+        $lines = $this->fallbackPdfLines($text);
+        $pages = array_chunk($lines, 48) ?: [['-']];
+        $objects = [1 => '<< /Type /Catalog /Pages 2 0 R >>'];
+        $pageObjectIds = [];
+        $fontObjectId = 3 + (count($pages) * 2);
+        $nextObjectId = 3;
+
+        foreach ($pages as $pageLines) {
+            $pageObjectId = $nextObjectId++;
+            $contentObjectId = $nextObjectId++;
+            $pageObjectIds[] = $pageObjectId;
+            $objects[$pageObjectId] = "<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 {$fontObjectId} 0 R >> >> /MediaBox [0 0 595 842] /Contents {$contentObjectId} 0 R >>";
+            $objects[$contentObjectId] = $this->fallbackPdfStream($pageLines);
+        }
+
+        $objects[2] = '<< /Type /Pages /Kids ['.implode(' ', array_map(fn (int $id): string => "{$id} 0 R", $pageObjectIds)).'] /Count '.count($pageObjectIds).' >>';
+        $objects[$fontObjectId] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+        ksort($objects);
+
+        return $this->fallbackPdfDocument($objects);
+    }
+
+    private function fallbackPdfLines(string $text): array
+    {
+        $lines = [];
+
+        foreach (explode("\n", str_replace(["\r\n", "\r"], "\n", $text)) as $line) {
+            array_push($lines, ...explode("\n", wordwrap(trim($line), 92, "\n", true) ?: ' '));
+        }
+
+        return $lines;
+    }
+
+    private function fallbackPdfStream(array $lines): string
+    {
+        $content = "BT\n/F1 10 Tf\n50 790 Td\n14 TL\n";
+
+        foreach ($lines as $line) {
+            $content .= '('.$this->fallbackPdfEscape($line).") Tj\nT*\n";
+        }
+
+        $content .= "ET\n";
+
+        return "<< /Length ".strlen($content)." >>\nstream\n{$content}endstream";
+    }
+
+    private function fallbackPdfEscape(string $value): string
+    {
+        $encoded = @iconv('UTF-8', 'Windows-1252//TRANSLIT//IGNORE', $value);
+        $encoded = $encoded === false ? $value : $encoded;
+
+        return str_replace(['\\', '(', ')'], ['\\\\', '\\(', '\\)'], $encoded);
+    }
+
+    private function fallbackPdfDocument(array $objects): string
+    {
+        $pdf = "%PDF-1.4\n";
+        $offsets = [0 => 0];
+
+        foreach ($objects as $id => $object) {
+            $offsets[$id] = strlen($pdf);
+            $pdf .= "{$id} 0 obj\n{$object}\nendobj\n";
+        }
+
+        $xrefOffset = strlen($pdf);
+        $pdf .= "xref\n0 ".(count($objects) + 1)."\n0000000000 65535 f \n";
+
+        for ($id = 1; $id <= count($objects); $id++) {
+            $pdf .= sprintf("%010d 00000 n \n", $offsets[$id]);
+        }
+
+        return $pdf."trailer\n<< /Size ".(count($objects) + 1)." /Root 1 0 R >>\nstartxref\n{$xrefOffset}\n%%EOF\n";
     }
 
     private function mailHtml(string $subject, array $mail): string
