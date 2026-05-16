@@ -20,4 +20,12 @@ return [
     'links' => [
         public_path('storage') => env('FILESYSTEM_PUBLIC_ROOT', storage_path('app/public')),
     ],
+    'private_fallback_roots' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', env('FILESYSTEM_PRIVATE_FALLBACK_ROOTS', ''))
+    ))),
+    'public_fallback_roots' => array_values(array_filter(array_map(
+        'trim',
+        explode(',', env('FILESYSTEM_PUBLIC_FALLBACK_ROOTS', ''))
+    ))),
 ];

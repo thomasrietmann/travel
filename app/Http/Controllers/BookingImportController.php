@@ -7,16 +7,19 @@ use App\Models\Booking;
 use App\Models\Document;
 use App\Models\Trip;
 use App\Services\BookingAiExtractor;
+use App\Services\DocumentStorage;
 use App\Services\TripSummaryGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Throwable;
 
 class BookingImportController extends Controller
 {
-    public function store(BookingImportRequest $request, Trip $trip, BookingAiExtractor $extractor, TripSummaryGenerator $summaryGenerator): RedirectResponse
+    public function store(BookingImportRequest $request, Trip $trip, BookingAiExtractor $extractor, TripSummaryGenerator $summaryGenerator, DocumentStorage $documentStorage): RedirectResponse
     {
         $this->authorize('update', $trip);
 
@@ -34,14 +37,25 @@ class BookingImportController extends Controller
                     continue;
                 }
 
-                $booking = $trip->bookings()->create($validator->validated());
-                $trip->documents()->create([
-                    'booking_id' => $booking->id,
-                    'title' => $this->clean($extracted['document_title'] ?? '') ?: $booking->title,
-                    'file_path' => $file->store("documents/{$trip->id}", 'local'),
-                    'document_type' => in_array($extracted['document_type'] ?? '', Document::TYPES, true) ? $extracted['document_type'] : 'confirmation',
-                    'notes' => 'Automatisch aus Buchungsimport erstellt.',
-                ]);
+                DB::transaction(function () use ($trip, $validator, $file, $extracted, $documentStorage): void {
+                    $booking = $trip->bookings()->create($validator->validated());
+                    $path = $this->documentPath($trip, $file);
+                    $contents = file_get_contents($file->getRealPath());
+
+                    if ($contents === false) {
+                        throw new \RuntimeException('Dokument konnte nicht gelesen werden.');
+                    }
+
+                    $documentStorage->writePrivate($path, $contents);
+
+                    $trip->documents()->create([
+                        'booking_id' => $booking->id,
+                        'title' => $this->clean($extracted['document_title'] ?? '') ?: $booking->title,
+                        'file_path' => $path,
+                        'document_type' => in_array($extracted['document_type'] ?? '', Document::TYPES, true) ? $extracted['document_type'] : 'confirmation',
+                        'notes' => 'Automatisch aus Buchungsimport erstellt.',
+                    ]);
+                });
 
                 $created++;
             } catch (Throwable $exception) {
@@ -89,6 +103,13 @@ class BookingImportController extends Controller
         } catch (Throwable) {
             // Erfolgreich importierte Buchungen bleiben bestehen, auch wenn die AI-Summary fehlschlaegt.
         }
+    }
+
+    private function documentPath(Trip $trip, UploadedFile $file): string
+    {
+        $extension = $file->getClientOriginalExtension();
+
+        return 'documents/'.$trip->id.'/'.Str::random(40).($extension ? ".{$extension}" : '');
     }
 
     private function bookingRules(): array

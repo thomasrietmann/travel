@@ -124,7 +124,11 @@ SESSION_FILES_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/framework/se
 CACHE_FILE_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/framework/cache/data
 FILESYSTEM_LOCAL_ROOT=/home/httpd/vhosts/example.ch/travel.git/storage/app/private
 FILESYSTEM_PUBLIC_ROOT=/home/httpd/vhosts/example.ch/travel.git/storage/app/public
+FILESYSTEM_PRIVATE_FALLBACK_ROOTS=/travel.git/storage/app/private
+FILESYSTEM_PUBLIC_FALLBACK_ROOTS=/travel.git/storage/app/public
 ```
+
+`FILESYSTEM_PRIVATE_FALLBACK_ROOTS` und `FILESYSTEM_PUBLIC_FALLBACK_ROOTS` sind optional und koennen mehrere kommaseparierte Storage-Wurzeln enthalten. Das ist hilfreich, wenn Web- und Cron-Prozess auf demselben Hosting unterschiedliche absolute Pfade sehen.
 
 Bestehende Dokumente aus frueheren Versionen koennen vom public Storage in den privaten Storage verschoben werden:
 

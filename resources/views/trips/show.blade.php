@@ -270,11 +270,12 @@
             const dropzone = form.querySelector('[data-booking-dropzone]');
             const fileName = form.querySelector('[data-booking-file-name]');
             let selectedFiles = [];
+            const supportsAdditiveFiles = typeof DataTransfer === 'function';
 
             const fileKey = (file) => `${file.name}-${file.size}-${file.lastModified}`;
 
             const syncInput = () => {
-                if (typeof DataTransfer !== 'function') {
+                if (!supportsAdditiveFiles) {
                     return;
                 }
 
@@ -288,6 +289,12 @@
             };
 
             const addFiles = (files) => {
+                if (!supportsAdditiveFiles) {
+                    selectedFiles = Array.from(files).slice(0, 10);
+                    showFile();
+                    return;
+                }
+
                 const existing = new Set(selectedFiles.map(fileKey));
 
                 Array.from(files).forEach((file) => {

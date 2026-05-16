@@ -173,6 +173,15 @@ class DocumentController extends Controller
 
     private function legacyAbsolutePaths(Document $document): array
     {
+        $privateFallbacks = collect(config('filesystems.private_fallback_roots', []))
+            ->filter()
+            ->map(fn (string $root): string => rtrim($root, '/').'/'.$document->file_path)
+            ->all();
+        $publicFallbacks = collect(config('filesystems.public_fallback_roots', []))
+            ->filter()
+            ->map(fn (string $root): string => rtrim($root, '/').'/'.$document->file_path)
+            ->all();
+
         return array_values(array_unique([
             Storage::disk(self::DOCUMENT_DISK)->path($document->file_path),
             Storage::disk(self::LEGACY_DOCUMENT_DISK)->path($document->file_path),
@@ -180,8 +189,8 @@ class DocumentController extends Controller
             storage_path('app/public/'.$document->file_path),
             base_path('storage/app/private/'.$document->file_path),
             base_path('storage/app/public/'.$document->file_path),
-            '/travel.git/storage/app/private/'.$document->file_path,
-            '/travel.git/storage/app/public/'.$document->file_path,
+            ...$privateFallbacks,
+            ...$publicFallbacks,
         ]));
     }
 
