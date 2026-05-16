@@ -177,6 +177,16 @@ class IncomingMailImporter
 
     private function resolveTrip(User $user, array $data): Trip
     {
+        [$bookingStartDate, $bookingEndDate] = $this->bookingDateRange($data);
+
+        if ($bookingStartDate) {
+            $trip = $this->findTripByDateRange($user, $bookingStartDate, $bookingEndDate ?: $bookingStartDate);
+
+            if ($trip) {
+                return $trip;
+            }
+        }
+
         $tripId = (int) ($data['trip_id'] ?? 0);
 
         if ($tripId > 0) {
@@ -188,17 +198,69 @@ class IncomingMailImporter
             }
         }
 
-        $startDate = $this->date($data['trip_start_date'] ?? '') ?: $this->date($data['start_date'] ?? '');
+        $startDate = $this->date($data['trip_start_date'] ?? '') ?: $bookingStartDate;
+        $endDate = $this->date($data['trip_end_date'] ?? '') ?: $bookingEndDate ?: $startDate;
 
         return $user->trips()->create([
             'title' => $this->clean($data['trip_title'] ?? '') ?: $this->clean($data['title'] ?? '') ?: 'Importierte Reise',
             'type' => in_array($data['trip_type'] ?? '', Trip::TYPES, true) ? $data['trip_type'] : 'other',
             'destination' => $this->clean($data['trip_destination'] ?? '') ?: null,
             'start_date' => $startDate,
-            'end_date' => $this->date($data['trip_end_date'] ?? '') ?: $startDate,
+            'end_date' => $endDate,
             'status' => in_array($data['trip_status'] ?? '', Trip::STATUSES, true) ? $data['trip_status'] : 'planned',
             'notes' => $this->clean($data['trip_notes'] ?? '') ?: 'Automatisch aus weitergeleiteter Mail erstellt.',
         ]);
+    }
+
+    private function bookingDateRange(array $data): array
+    {
+        $startDate = $this->date($data['start_date'] ?? '')
+            ?: $this->date($data['trip_start_date'] ?? '');
+        $endDate = $this->date($data['end_date'] ?? '')
+            ?: $this->date($data['trip_end_date'] ?? '')
+            ?: $startDate;
+
+        if ($startDate && $endDate && $endDate < $startDate) {
+            return [$endDate, $startDate];
+        }
+
+        return [$startDate, $endDate];
+    }
+
+    private function findTripByDateRange(User $user, string $bookingStartDate, string $bookingEndDate): ?Trip
+    {
+        $trips = $user->trips()
+            ->get(['id', 'user_id', 'title', 'start_date', 'end_date'])
+            ->merge($user->sharedTrips()->get([
+                'trips.id',
+                'trips.user_id',
+                'trips.title',
+                'trips.start_date',
+                'trips.end_date',
+            ]))
+            ->unique('id')
+            ->filter(fn (Trip $trip): bool => (bool) $trip->start_date)
+            ->filter(function (Trip $trip) use ($bookingStartDate, $bookingEndDate): bool {
+                $tripStartDate = $trip->start_date->toDateString();
+                $tripEndDate = $trip->end_date?->toDateString() ?: $tripStartDate;
+
+                return $bookingStartDate <= $tripEndDate && $bookingEndDate >= $tripStartDate;
+            });
+
+        return $trips
+            ->sortBy(function (Trip $trip) use ($bookingStartDate, $bookingEndDate): string {
+                $tripStartDate = $trip->start_date->toDateString();
+                $tripEndDate = $trip->end_date?->toDateString() ?: $tripStartDate;
+                $containsBooking = $bookingStartDate >= $tripStartDate && $bookingEndDate <= $tripEndDate;
+
+                return sprintf(
+                    '%d-%010d-%s',
+                    $containsBooking ? 0 : 1,
+                    abs(strtotime($tripStartDate) - strtotime($bookingStartDate)),
+                    $tripStartDate,
+                );
+            })
+            ->first();
     }
 
     private function createBooking(Trip $trip, array $data, string $subject): ?Booking
