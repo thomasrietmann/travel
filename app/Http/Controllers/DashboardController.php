@@ -17,12 +17,17 @@ class DashboardController extends Controller
                 ->orWhereHas('sharedUsers', fn ($sharedQuery) => $sharedQuery->whereKey($request->user()->id)))
             ->latest('start_date')
             ->get()
-            ->sortBy(fn ($trip) => sprintf(
-                '%d-%d-%012d',
-                $trip->is_active ? 0 : 1,
-                $trip->is_past ? 1 : 0,
-                $trip->start_date?->timestamp ?? PHP_INT_MAX,
-            ))
+            ->sortBy(function (Trip $trip): string {
+                $timestamp = $trip->start_date?->timestamp ?? PHP_INT_MAX;
+                $dateSort = $trip->is_past ? PHP_INT_MAX - $timestamp : $timestamp;
+
+                return sprintf(
+                    '%d-%d-%012d',
+                    $trip->is_active ? 0 : 1,
+                    $trip->is_past ? 1 : 0,
+                    $dateSort,
+                );
+            })
             ->values();
 
         return view('dashboard.index', [
