@@ -567,16 +567,19 @@ class IncomingMailImporter
             ? imap_body($imap, $messageNumber)
             : imap_fetchbody($imap, $messageNumber, $partNumber);
         $body = $this->decodeBody((string) $rawBody, (int) ($part->encoding ?? 0));
+        $mimeType = $this->mimeType($part);
         $filename = $this->partFilename($part);
+        $disposition = Str::lower($part->disposition ?? '');
+        $isAttachment = $filename || $disposition === 'attachment' || Str::lower($mimeType) === 'application/pdf';
 
-        if ($filename) {
-            if (! $this->isSupportedAttachment($filename)) {
+        if ($isAttachment) {
+            if (! $this->isSupportedAttachment($filename, $mimeType)) {
                 return;
             }
 
             $result['attachments'][] = [
-                'filename' => $filename,
-                'mime_type' => $this->mimeType($part),
+                'filename' => $filename ?: $this->fallbackAttachmentFilename($mimeType),
+                'mime_type' => $mimeType,
                 'contents' => $body,
             ];
 
@@ -616,9 +619,25 @@ class IncomingMailImporter
         return null;
     }
 
-    private function isSupportedAttachment(string $filename): bool
+    private function isSupportedAttachment(?string $filename, string $mimeType): bool
     {
-        return in_array(Str::lower(pathinfo($filename, PATHINFO_EXTENSION)), ['pdf', 'jpg', 'jpeg', 'png', 'webp'], true);
+        $extension = Str::lower(pathinfo((string) $filename, PATHINFO_EXTENSION));
+
+        return in_array($extension, ['pdf', 'jpg', 'jpeg', 'png', 'webp'], true)
+            || in_array(Str::lower($mimeType), ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'], true);
+    }
+
+    private function fallbackAttachmentFilename(string $mimeType): string
+    {
+        $extension = match (Str::lower($mimeType)) {
+            'application/pdf' => 'pdf',
+            'image/jpeg' => 'jpg',
+            'image/png' => 'png',
+            'image/webp' => 'webp',
+            default => 'bin',
+        };
+
+        return 'mail-anhang.'.$extension;
     }
 
     private function mimeType(object $part): string
