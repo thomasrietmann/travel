@@ -250,6 +250,52 @@ git pull origin main
 /opt/php83/bin/php artisan view:cache
 ```
 
+## 14. Email-Import als Plesk CronJob
+
+Der automatische Email-Import wird ueber das PHP-File `cron-mail-import.php` im Projektverzeichnis gestartet. Das File liegt bewusst ausserhalb von `public`, damit es nicht direkt ueber die Website aufgerufen werden kann.
+
+In Plesk:
+
+1. `Websites & Domains` oeffnen.
+2. `Geplante Aufgaben` bzw. `Scheduled Tasks` oeffnen.
+3. Neue Aufgabe erstellen.
+4. Aufgabentyp `PHP-Skript ausfuehren` waehlen.
+5. Skriptpfad auf das Projekt-File setzen, zum Beispiel:
+
+```text
+~/tripcontrol/cron-mail-import.php
+```
+
+Falls Plesk stattdessen einen Befehl erwartet:
+
+```bash
+/opt/php83/bin/php ~/tripcontrol/cron-mail-import.php
+```
+
+Optional kann die Anzahl Mails pro Lauf begrenzt werden:
+
+```bash
+/opt/php83/bin/php ~/tripcontrol/cron-mail-import.php --limit=5
+```
+
+Der Import benoetigt diese `.env`-Werte:
+
+```env
+MAIL_IMPORT_ENABLED=true
+MAIL_IMPORT_IMAP_MAILBOX="{imap.example.com:993/imap/ssl}INBOX"
+MAIL_IMPORT_IMAP_USERNAME="mailbox@example.com"
+MAIL_IMPORT_IMAP_PASSWORD="..."
+MAIL_IMPORT_IMAP_SEARCH=UNSEEN
+MAIL_IMPORT_MARK_SEEN=true
+```
+
+Nach Aenderungen an `.env` in Produktion:
+
+```bash
+/opt/php83/bin/php artisan optimize:clear
+/opt/php83/bin/php artisan config:cache
+```
+
 ## Waehrungskurse anpassen
 
 TripControl rechnet alle Beträge mit festen Kursen nach CHF um. Die Standardkurse liegen in `config/exchange.php`. Fuer servereigene Kurse, die bei `git pull` nicht ueberschrieben werden sollen:
@@ -269,7 +315,7 @@ Nach jeder Anpassung:
 /opt/php83/bin/php artisan config:cache
 ```
 
-## 14. Fehlerbehebung
+## 15. Fehlerbehebung
 
 ### 500 Fehler
 
