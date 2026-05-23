@@ -36,6 +36,8 @@ Route::middleware(['auth', 'not_admin'])->group(function () {
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::post('/settings/email-aliases', [SettingsController::class, 'storeEmailAlias'])->name('settings.email-aliases.store');
     Route::delete('/settings/email-aliases/{alias}', [SettingsController::class, 'destroyEmailAlias'])->name('settings.email-aliases.destroy');
+    Route::post('/settings/birthdays', [SettingsController::class, 'storeBirthday'])->name('settings.birthdays.store');
+    Route::delete('/settings/birthdays/{birthday}', [SettingsController::class, 'destroyBirthday'])->name('settings.birthdays.destroy');
 
     Route::resource('trips', TripController::class);
     Route::post('/trips/{trip}/shares', [TripShareController::class, 'store'])->name('trips.shares.store');

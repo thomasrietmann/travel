@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->hasMany(UserEmailAlias::class);
     }
 
+    public function birthdays(): HasMany
+    {
+        return $this->hasMany(UserBirthday::class);
+    }
+
     public function ensureCountdownShareToken(): string
     {
         if ($this->countdown_share_token) {

@@ -14,9 +14,8 @@ class CountdownController extends Controller
         $user = $request->user();
 
         return view('countdown.index', [
-            'trips' => $this->upcomingTrips($user),
+            'countdownItems' => $this->countdownItems($user),
             'public' => false,
-            'shareUrl' => route('countdown.public', $user->ensureCountdownShareToken()),
         ]);
     }
 
@@ -27,10 +26,22 @@ class CountdownController extends Controller
             ->firstOrFail();
 
         return view('countdown.index', [
-            'trips' => $this->upcomingTrips($user),
+            'countdownItems' => $this->countdownItems($user),
             'public' => true,
-            'shareUrl' => null,
         ]);
+    }
+
+    private function countdownItems(User $user)
+    {
+        return $this->upcomingTrips($user)
+            ->map(fn (Trip $trip) => [
+                'type' => 'trip',
+                'date' => $trip->start_date,
+                'trip' => $trip,
+            ])
+            ->merge($this->upcomingBirthdays($user))
+            ->sortBy('date')
+            ->values();
     }
 
     private function upcomingTrips(User $user)
@@ -43,5 +54,16 @@ class CountdownController extends Controller
             ->whereDate('start_date', '>', today())
             ->orderBy('start_date')
             ->get();
+    }
+
+    private function upcomingBirthdays(User $user)
+    {
+        return $user->birthdays()
+            ->get()
+            ->map(fn ($birthday) => [
+                'type' => 'birthday',
+                'date' => $birthday->nextBirthdayDate(),
+                'birthday' => $birthday,
+            ]);
     }
 }
