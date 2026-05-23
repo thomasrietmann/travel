@@ -1,5 +1,17 @@
 @extends(($public ?? false) ? 'layouts.public' : 'layouts.app')
 
+@if ($public ?? false)
+    @push('head')
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('brand/countdown-secret-favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('brand/countdown-secret-favicon-16x16.png') }}">
+        <link rel="apple-touch-icon" href="{{ asset('brand/countdown-secret-apple-touch-icon.png') }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('brand/countdown-secret-apple-touch-icon.png') }}">
+        <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('brand/countdown-secret-apple-touch-icon-167x167.png') }}">
+        <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('brand/countdown-secret-apple-touch-icon-152x152.png') }}">
+        <link rel="apple-touch-icon" sizes="120x120" href="{{ asset('brand/countdown-secret-apple-touch-icon-120x120.png') }}">
+    @endpush
+@endif
+
 @section('content')
     <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
