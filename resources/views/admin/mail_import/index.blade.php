@@ -25,4 +25,12 @@
             <pre class="max-h-[32rem] overflow-auto rounded-md bg-slate-950 p-4 text-xs leading-relaxed text-slate-100">{{ implode("\n", $logLines) }}</pre>
         @endif
     </div>
+    <section class="mt-6 rounded-lg border bg-white p-6">
+        <h2 class="font-semibold">Letzte Importversuche</h2>
+        <p class="mt-2 text-sm">Blockierte oder fehlgeschlagene Mails bleiben zur Klärung im Postfach. Nach der Korrektur kann ein Administrator den Import anhand der ID erneut freigeben.</p>
+        <table class="mt-4 w-full text-left text-sm">
+            <thead><tr><th>ID</th><th>Status</th><th>Versuche</th><th>Aktualisiert</th></tr></thead>
+            <tbody>@foreach ($imports as $import)<tr><td>{{ $import->id }}</td><td>{{ $import->status }}</td><td>{{ $import->attempts }}</td><td>{{ $import->updated_at }}</td></tr>@endforeach</tbody>
+        </table>
+    </section>
 @endsection

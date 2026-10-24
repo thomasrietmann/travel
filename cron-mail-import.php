@@ -3,55 +3,25 @@
 
 declare(strict_types=1);
 
-$basePath = __DIR__;
-$artisanPath = $basePath.'/artisan';
-$lockPath = $basePath.'/storage/framework/mail-import-cron.lock';
+use Symfony\Component\Console\Input\ArgvInput;
 
-if (! is_file($artisanPath)) {
-    fwrite(STDERR, "Artisan wurde nicht gefunden: {$artisanPath}\n");
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
     exit(1);
 }
 
-if (! chdir($basePath)) {
-    fwrite(STDERR, "Projektverzeichnis konnte nicht geoeffnet werden: {$basePath}\n");
-    exit(1);
-}
-
-$lock = fopen($lockPath, 'c');
-
-if ($lock === false) {
-    fwrite(STDERR, "Lock-Datei konnte nicht geoeffnet werden: {$lockPath}\n");
-    exit(1);
-}
-
-if (! flock($lock, LOCK_EX | LOCK_NB)) {
-    echo "Email-Import laeuft bereits. Dieser Cron-Lauf wird uebersprungen.\n";
-    exit(0);
-}
-
-$limit = getenv('MAIL_IMPORT_CRON_LIMIT') ?: null;
-
-foreach (array_slice($argv ?? [], 1) as $argument) {
+define('LARAVEL_START', microtime(true));
+require __DIR__.'/vendor/autoload.php';
+$app = require_once __DIR__.'/bootstrap/app.php';
+$arguments = [__DIR__.'/artisan', 'mail:import'];
+$limit = getenv('MAIL_IMPORT_CRON_LIMIT');
+foreach (array_slice($argv, 1) as $argument) {
     if (preg_match('/^--limit=(\d+)$/', $argument, $matches)) {
         $limit = $matches[1];
     }
 }
-
-$command = [
-    PHP_BINARY,
-    $artisanPath,
-    'mail:import',
-];
-
-if ($limit !== null && $limit !== '' && ctype_digit((string) $limit)) {
-    $command[] = '--limit='.(int) $limit;
+if ($limit !== false && ctype_digit((string) $limit)) {
+    $arguments[] = '--limit='.$limit;
 }
-
-$escapedCommand = implode(' ', array_map('escapeshellarg', $command));
-
-passthru($escapedCommand, $status);
-
-flock($lock, LOCK_UN);
-fclose($lock);
-
-exit($status);
+// The service owns the shared lock, including direct Artisan and administrator starts.
+exit($app->handleCommand(new ArgvInput($arguments)));

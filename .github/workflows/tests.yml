@@ -1,0 +1,62 @@
+name: Security and compatibility
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        database: [sqlite, mysql]
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test-only
+          MYSQL_DATABASE: tripcontrol_test
+        ports: ['3306:3306']
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -ptest-only" --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: ${{ matrix.database }}
+      DB_DATABASE: ${{ matrix.database == 'mysql' && 'tripcontrol_test' || ':memory:' }}
+      DB_HOST: 127.0.0.1
+      DB_USERNAME: root
+      DB_PASSWORD: test-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3.36'
+          extensions: mbstring, dom, fileinfo, pdo_sqlite, pdo_mysql, imap
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: composer validate --strict --no-check-publish
+      - run: composer audit --locked
+      - run: rg --files app bootstrap config database routes tests ops -g '*.php' -0 | xargs -0 -n 1 php -l
+      - run: php -l cron-mail-import.php
+      - name: Prepare separate empty restore database
+        if: matrix.database == 'mysql'
+        run: |
+          command -v mysql
+          command -v mysqldump
+          php -r '$pdo = new PDO("mysql:host=".getenv("DB_HOST"), getenv("DB_USERNAME"), getenv("DB_PASSWORD")); $pdo->exec("CREATE DATABASE tripcontrol_restore_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");'
+          echo "TC_MYSQL_BIN=$(command -v mysql)" >> "$GITHUB_ENV"
+          echo "TC_MYSQLDUMP_BIN=$(command -v mysqldump)" >> "$GITHUB_ENV"
+          echo "TC_RESTORE_TEST_DATABASE=tripcontrol_restore_test" >> "$GITHUB_ENV"
+      - run: php vendor/bin/phpunit
+  assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: '11.25.0'
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: pnpm audit --audit-level=moderate
+      - run: pnpm run build
+      - run: git diff --exit-code -- public/build/app.css

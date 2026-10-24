@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'daily_limit' => (int) env('AI_DAILY_LIMIT', 60),
     'openai' => [
         'api_key' => env('OPENAI_API_KEY'),
         'model' => env('OPENAI_BOOKING_MODEL', 'gpt-5.4-mini'),

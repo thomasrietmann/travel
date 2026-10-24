@@ -1,0 +1,69 @@
+PHPUnit 11.5.57 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.3.36
+Configuration: /Users/thomasrietmann/Documents/Codex/2026-05-14/erstelle-eine-laravel-app-namens-tripcontrol/phpunit.xml
+
+.............................................                     45 / 45 (100%)
+
+Time: 00:09.185, Memory: 58.50 MB
+
+Ai Safety (Tests\Feature\AiSafety)
+ ✔ Ai responses are not stored and uploads expire and are deleted
+ ✔ Api error details are hidden and file cleanup still runs
+ ✔ Daily ai limit blocks requests before upload
+ ✔ Summary does not send booking references or private notes
+
+Document Safety (Tests\Feature\DocumentSafety)
+ ✔ Download preserves legacy storage and access boundaries
+ ✔ Failed replacement preserves row and original file
+ ✔ Rollback tracks new files and keeps existing documents
+ ✔ Trip deletion cleans all copies only after commit
+ ✔ Private migration is dry run by default and never deletes sources
+ ✔ Cleanup never deletes a referenced file
+ ✔ Path traversal is rejected
+
+Identity Safety (Tests\Feature\IdentitySafety)
+ ✔ Registration cannot claim an existing alias even with different case
+ ✔ Shared identity writer checks both tables inside transaction
+ ✔ Existing unverified bcrypt login preserves hash and access
+ ✔ Login attempts are limited
+ ✔ New registration regenerates session and does not need smtp
+ ✔ Alias verification requires signed link and correct account
+ ✔ Ambiguous legacy address never selects an owner
+ ✔ Countdown is opt in and can be rotated and revoked
+ ✔ Main address verification is signed and session bound
+ ✔ Password remediation preserves account and documents and revokes sessions
+
+Mail Import Safety (Tests\Feature\MailImportSafety)
+ ✔ Valid import is idempotent and stores one private document
+ ✔ Seen failure never repeats a committed booking
+ ✔ Failure keeps mail unread and supports controlled retry
+ ✔ Forged or unverified sender stays blocked without reading body
+ ✔ Unverified existing user remains intact but cannot import
+ ✔ Oversize mail is rejected before fetching body
+ ✔ Claimed pdf with html content is rejected
+ ✔ Nested mime limit is enforced before fetching body
+ ✔ Reply to cannot select the victim and ambiguous auth is rejected
+ ✔ All entry points share a non expiring process lock
+ ✔ Mail command exits nonzero when messages fail
+ ✔ Dmarc text inside reason strings or comments is not an authentication result
+ ✔ Lost database commit acknowledgement does not make import retryable
+ ✔ Quoted header reason with escaped quote cannot inject a result
+
+Mysql Identity Lock (Tests\Feature\MysqlIdentityLock)
+ ✔ Identity mutex serializes two real mysql connections
+
+Storage Transactions (Tests\Feature\StorageTransactions)
+ ✔ Successful replacement keeps original until cleanup
+ ✔ Database failure after upload rolls back all document rows
+ ✔ Failed booking attachment rolls back booking changes
+ ✔ Document migration reports write failure and keeps public bytes
+ ✔ Foreign booking cannot be attached to own trip
+
+Upgrade Compatibility (Tests\Feature\UpgradeCompatibility)
+ ✔ Additive upgrade preserves existing rows passwords tokens and files
+ ✔ Key pages render with local assets and security headers
+ ✔ Shared users can edit but only owners can delete or manage shares
+ ✔ Csrf and canonical host are enforced outside test bypass
+
+OK (45 tests, 337 assertions)

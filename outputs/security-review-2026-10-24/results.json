@@ -1,0 +1,83 @@
+{
+    "direct_argon_switch_with_existing_bcrypt": "RuntimeException: This password does not use the Argon2id algorithm.",
+    "missing_controller_actions": [],
+    "authenticated_page_statuses": {
+        "/dashboard": 200,
+        "/tasks": 200,
+        "/documents": 200,
+        "/settings": 200,
+        "/countdown": 200,
+        "/trips/1": 200,
+        "/trips/1/edit": 200,
+        "/trips/1/bookings/create": 200,
+        "/trips/1/documents/create": 200,
+        "/trips/1/tasks/create": 200
+    },
+    "access_boundaries": {
+        "outsider_trip": 403,
+        "outsider_document": 403,
+        "shared_document": 200,
+        "user_admin_page": 403,
+        "admin_admin_page": 200,
+        "guest_document": 302
+    },
+    "eight_invalid_logins": [
+        302,
+        302,
+        302,
+        302,
+        302,
+        302,
+        302,
+        302
+    ],
+    "alias_accepted_without_verification": true,
+    "reply_to_selects_victim_account": true,
+    "registration_overrides_existing_alias": {
+        "account_created": true,
+        "email_verified": false,
+        "import_now_maps_to_new_account": true
+    },
+    "attachment_accepts_executable_name_with_claimed_pdf_mime": true,
+    "attachment_accepts_pdf_name_with_non_pdf_mime": true,
+    "second_import_marks_active_job_failed": {
+        "result": "failed",
+        "status": "failed"
+    },
+    "failed_import_is_not_retried": "ignored",
+    "public_countdown": {
+        "status": 200,
+        "includes_birthday": true,
+        "cache_control": "no-cache, private",
+        "referrer_policy": null,
+        "csp": null
+    },
+    "trip_delete_leaves_file": {
+        "document_record_exists": false,
+        "file_exists": true
+    },
+    "document_delete_leaves_fallback_copy": {
+        "primary_exists": false,
+        "fallback_exists": true
+    },
+    "migration_after_failed_write": {
+        "exit_code": 0,
+        "source_still_exists": false,
+        "output": "2 Dokumente nach private Storage migriert."
+    },
+    "migration_leaves_public_duplicate_when_private_exists": true,
+    "replace_after_failed_write": {
+        "status": 302,
+        "original_still_exists": false,
+        "database_file_path": "0"
+    },
+    "blade_compilation_errors": [],
+    "framework_used_for_isolated_review": "13.37.0",
+    "loaded_application_source": "/private/tmp/tripcontrol-audit-h9jexjtn/app/Models/User.php",
+    "laravel_empty_env_does_not_use_default": "",
+    "blank_optional_env_configuration": {
+        "view_paths": [],
+        "view_compiled_path": "",
+        "local_storage_root": ""
+    }
+}

@@ -5,7 +5,7 @@ return [
     'lifetime' => (int) env('SESSION_LIFETIME', 120),
     'expire_on_close' => env('SESSION_EXPIRE_ON_CLOSE', false),
     'encrypt' => env('SESSION_ENCRYPT', false),
-    'files' => env('SESSION_FILES_PATH', storage_path('framework/sessions')),
+    'files' => (env('SESSION_FILES_PATH') ?: storage_path('framework/sessions')),
     'connection' => env('SESSION_CONNECTION'),
     'table' => env('SESSION_TABLE', 'sessions'),
     'store' => env('SESSION_STORE'),
@@ -13,7 +13,7 @@ return [
     'cookie' => env('SESSION_COOKIE', 'tripcontrol_session'),
     'path' => env('SESSION_PATH', '/'),
     'domain' => env('SESSION_DOMAIN'),
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE', env('APP_ENV') === 'production'),
     'http_only' => true,
     'same_site' => env('SESSION_SAME_SITE', 'lax'),
 ];

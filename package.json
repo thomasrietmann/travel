@@ -1,0 +1,11 @@
+{
+  "name": "tripcontrol-assets",
+  "private": true,
+  "scripts": {
+    "build": "tailwindcss -i resources/css/app.css -o public/build/app.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.19"
+  },
+  "packageManager": "pnpm@11.25.0"
+}

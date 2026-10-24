@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ImportedMail extends Model
 {
     protected $fillable = [
+        'attempts',
         'user_id',
         'trip_id',
         'message_id',

@@ -4,7 +4,6 @@
     <div class="mx-auto max-w-md">
         <div class="mb-8">
             <h1 class="text-3xl font-semibold tracking-tight">Einloggen</h1>
-            <p class="mt-2 text-sm text-slate-600">Demo: demo@tripcontrol.test / password</p>
         </div>
 
         <form method="POST" action="{{ route('login') }}" class="space-y-5 rounded-lg border border-slate-200 bg-white p-6 shadow-sm">

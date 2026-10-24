@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Database\Factories\TripFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,11 +13,13 @@ use Illuminate\Support\Carbon;
 
 class Trip extends Model
 {
-    /** @use HasFactory<\Database\Factories\TripFactory> */
+    /** @use HasFactory<TripFactory> */
     use HasFactory;
 
     public const TYPES = ['family_camper', 'coastertrip', 'roadtrip', 'citytrip', 'other'];
+
     public const STATUSES = ['idea', 'planned', 'booked', 'ready', 'completed'];
+
     public const TYPE_LABELS = [
         'family_camper' => 'Familienferien',
         'coastertrip' => 'Achterbahnreise',
@@ -23,6 +27,7 @@ class Trip extends Model
         'citytrip' => 'Städtereise',
         'other' => 'Sonstiges',
     ];
+
     public const STATUS_LABELS = [
         'idea' => 'Idee',
         'planned' => 'Geplant',
@@ -49,6 +54,13 @@ class Trip extends Model
             'start_date' => 'date',
             'end_date' => 'date',
         ];
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return $query->where(fn (Builder $visible) => $visible
+            ->where('user_id', $user->id)
+            ->orWhereHas('sharedUsers', fn (Builder $shared) => $shared->whereKey($user->id)));
     }
 
     public function user(): BelongsTo

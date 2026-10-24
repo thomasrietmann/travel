@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ImportedMail;
 use App\Services\IncomingMailImporter;
 use App\Services\MailImportLogger;
 use Illuminate\Http\RedirectResponse;
@@ -16,6 +17,7 @@ class MailImportController extends Controller
     public function index(): View
     {
         return view('admin.mail_import.index', [
+            'imports' => ImportedMail::query()->latest('updated_at')->limit(50)->get(['id', 'status', 'attempts', 'updated_at']),
             'logLines' => $this->logger->lastLines(),
             'logPath' => $this->logger->path(),
         ]);
@@ -28,21 +30,21 @@ class MailImportController extends Controller
         ]);
 
         try {
-            $stats = $importer->import();
+            $stats = $importer->import(1);
 
             $this->logger->info('Manueller Email-Import wurde abgeschlossen.', $stats);
 
             return redirect()
                 ->route('admin.mail-import.index')
-                ->with('status', "{$stats['imported']} Mails importiert, {$stats['ignored']} ignoriert, {$stats['failed']} fehlgeschlagen.");
+                ->with('status', "{$stats['imported']} Mails importiert, {$stats['ignored']} ignoriert, {$stats['failed']} fehlgeschlagen, {$stats['deferred']} zurückgestellt.");
         } catch (Throwable $exception) {
             $this->logger->error('Manueller Email-Import ist fehlgeschlagen.', [
-                'message' => $exception->getMessage(),
+                'exception_class' => $exception::class,
             ]);
 
             return redirect()
                 ->route('admin.mail-import.index')
-                ->with('error', 'Email-Import fehlgeschlagen: '.$exception->getMessage());
+                ->with('error', 'Email-Import fehlgeschlagen. Bitte Konfiguration und Importprotokoll prüfen.');
         }
     }
 }
