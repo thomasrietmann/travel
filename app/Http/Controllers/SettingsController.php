@@ -6,6 +6,7 @@ use App\Http\Requests\UserBirthdayRequest;
 use App\Http\Requests\UserEmailAliasRequest;
 use App\Models\UserBirthday;
 use App\Models\UserEmailAlias;
+use App\Services\EmailIdentity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -18,17 +19,15 @@ class SettingsController extends Controller
 
         return view('settings.index', [
             'user' => $user,
-            'shareUrl' => route('countdown.public', $user->ensureCountdownShareToken()),
+            'shareUrl' => $user->countdown_share_token ? route('countdown.public', $user->countdown_share_token) : null,
         ]);
     }
 
-    public function storeEmailAlias(UserEmailAliasRequest $request): RedirectResponse
+    public function storeEmailAlias(UserEmailAliasRequest $request, EmailIdentity $identities): RedirectResponse
     {
-        $request->user()->emailAliases()->create([
-            'email' => Str::lower($request->validated('email')),
-        ]);
+        $identities->create($request->validated('email'), fn (string $email) => $request->user()->emailAliases()->create(['email' => $email]));
 
-        return back()->with('status', 'E-Mail-Adresse wurde hinzugefügt.');
+        return back()->with('status', 'E-Mail-Adresse wurde hinzugefügt. Bitte fordere jetzt die Bestätigungsmail an.');
     }
 
     public function destroyEmailAlias(UserEmailAlias $alias): RedirectResponse
@@ -38,6 +37,20 @@ class SettingsController extends Controller
         $alias->delete();
 
         return back()->with('status', 'E-Mail-Adresse wurde entfernt.');
+    }
+
+    public function rotateCountdown(): RedirectResponse
+    {
+        request()->user()->forceFill(['countdown_share_token' => Str::random(48)])->save();
+
+        return back()->with('status', 'Neuer Countdown-Link wurde erstellt. Alte Links sind ungültig.');
+    }
+
+    public function revokeCountdown(): RedirectResponse
+    {
+        request()->user()->forceFill(['countdown_share_token' => null])->save();
+
+        return back()->with('status', 'Öffentlicher Countdown-Link wurde deaktiviert.');
     }
 
     public function storeBirthday(UserBirthdayRequest $request): RedirectResponse

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\TripRequest;
 use App\Models\Trip;
+use App\Services\DocumentStorage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,7 +18,7 @@ class TripController extends Controller
 
     public function create(): View
     {
-        return view('trips.create', ['trip' => new Trip()]);
+        return view('trips.create', ['trip' => new Trip]);
     }
 
     public function store(TripRequest $request): RedirectResponse
@@ -63,11 +64,17 @@ class TripController extends Controller
         return redirect()->route('trips.show', $trip)->with('status', 'Reise wurde aktualisiert.');
     }
 
-    public function destroy(Trip $trip): RedirectResponse
+    public function destroy(Trip $trip, DocumentStorage $storage): RedirectResponse
     {
         $this->authorize('delete', $trip);
 
-        $trip->delete();
+        $storage->transaction(function () use ($trip, $storage): void {
+            $current = Trip::query()->lockForUpdate()->findOrFail($trip->id);
+            foreach ($current->documents()->get() as $document) {
+                $storage->scheduleDeletion($document->file_path);
+            }
+            $current->delete();
+        });
 
         return redirect()->route('dashboard')->with('status', 'Reise wurde geloescht.');
     }

@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # Existing legacy copies must never bypass application authorization.
+    RewriteRule ^storage/documents(?:/|$) - [F,L,NC]
+
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 

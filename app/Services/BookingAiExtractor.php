@@ -5,20 +5,21 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\Document;
 use App\Models\Trip;
-use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Throwable;
 
 class BookingAiExtractor
 {
+    use UsesOpenAi;
+
     public function extract(Trip $trip, UploadedFile $file): array
     {
         if (! config('ai.openai.api_key')) {
             throw new RuntimeException('OPENAI_API_KEY ist nicht gesetzt.');
         }
+
+        app(AiBudget::class)->consume(request()->user()?->id ?? $trip->user_id);
 
         $uploadedFileId = null;
 
@@ -45,6 +46,7 @@ class BookingAiExtractor
             }
 
             $response = $this->client()->post('https://api.openai.com/v1/responses', [
+                'store' => false,
                 'model' => config('ai.openai.model'),
                 'input' => [
                     [
@@ -63,7 +65,7 @@ class BookingAiExtractor
             ]);
 
             if ($response->failed()) {
-                throw new RuntimeException('OpenAI konnte das Dokument nicht auswerten: '.$response->body());
+                throw new RuntimeException('OpenAI konnte das Dokument nicht auswerten.');
             }
 
             $json = $this->outputText($response->json());
@@ -76,11 +78,7 @@ class BookingAiExtractor
             return $data;
         } finally {
             if ($uploadedFileId) {
-                try {
-                    $this->client()->delete("https://api.openai.com/v1/files/{$uploadedFileId}");
-                } catch (Throwable) {
-                    // Cleanup must not hide a successful import.
-                }
+                $this->deleteUploadedFile($uploadedFileId);
             }
         }
     }
@@ -91,20 +89,15 @@ class BookingAiExtractor
             ->attach('file', file_get_contents($file->getRealPath()), $file->getClientOriginalName())
             ->post('https://api.openai.com/v1/files', [
                 'purpose' => 'user_data',
+                'expires_after[anchor]' => 'created_at',
+                'expires_after[seconds]' => 3600,
             ]);
 
         if ($response->failed() || ! $response->json('id')) {
-            throw new RuntimeException('Upload zu OpenAI ist fehlgeschlagen: '.$response->body());
+            throw new RuntimeException('Upload zu OpenAI ist fehlgeschlagen.');
         }
 
         return $response->json('id');
-    }
-
-    private function client(): PendingRequest
-    {
-        return Http::withToken(config('ai.openai.api_key'))
-            ->timeout(config('ai.openai.timeout'))
-            ->acceptJson();
     }
 
     private function prompt(Trip $trip): string
@@ -166,22 +159,5 @@ class BookingAiExtractor
                 'document_type',
             ],
         ];
-    }
-
-    private function outputText(array $response): string
-    {
-        if (isset($response['output_text'])) {
-            return $response['output_text'];
-        }
-
-        foreach ($response['output'] ?? [] as $output) {
-            foreach ($output['content'] ?? [] as $content) {
-                if (($content['type'] ?? null) === 'output_text' && isset($content['text'])) {
-                    return $content['text'];
-                }
-            }
-        }
-
-        throw new RuntimeException('OpenAI-Antwort enthaelt keinen Text.');
     }
 }

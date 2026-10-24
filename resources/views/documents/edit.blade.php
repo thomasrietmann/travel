@@ -19,7 +19,7 @@
         </div>
     </form>
 
-    <form id="delete-document" method="POST" action="{{ route('documents.destroy', $document) }}" onsubmit="return confirm('Dokument wirklich loeschen?')">
+    <form id="delete-document" method="POST" action="{{ route('documents.destroy', $document) }}" data-confirm="Dokument wirklich loeschen?">
         @csrf
         @method('DELETE')
     </form>

@@ -1,61 +1,25 @@
 <?php
 
-use App\Models\Document;
+use App\Models\ImportedMail;
 use App\Models\User;
+use App\Services\EmailIdentity;
+use App\Services\IncomingMailImporter;
 use App\Services\MailImportLogger;
+use App\Services\ProcessLock;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Storage;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
-
-Artisan::command('documents:migrate-private', function () {
-    $migrated = 0;
-    $missing = 0;
-
-    Document::query()->each(function (Document $document) use (&$migrated, &$missing) {
-        if (Storage::disk('local')->exists($document->file_path)) {
-            return;
-        }
-
-        if (Storage::disk('public')->exists($document->file_path)) {
-            Storage::disk('local')->put($document->file_path, Storage::disk('public')->get($document->file_path));
-            Storage::disk('public')->delete($document->file_path);
-            $migrated++;
-
-            return;
-        }
-
-        $legacyPath = base_path('storage/app/public/'.$document->file_path);
-
-        if (File::exists($legacyPath)) {
-            Storage::disk('local')->put($document->file_path, File::get($legacyPath));
-            File::delete($legacyPath);
-            $migrated++;
-
-            return;
-        }
-
-        $missing++;
-    });
-
-    $this->info("{$migrated} Dokumente nach private Storage migriert.");
-
-    if ($missing > 0) {
-        $this->warn("{$missing} Dokumente hatten keine auffindbare Datei.");
-    }
-})->purpose('Move existing document uploads from public to private storage');
 
 Artisan::command('mail:import {--limit= : Maximale Anzahl Mails fuer diesen Lauf}', function () {
     $logger = app(MailImportLogger::class);
 
     $logger->info('Email-Import per Artisan wurde gestartet.');
 
-    $stats = app(\App\Services\IncomingMailImporter::class)->import((int) ($this->option('limit') ?: 0));
+    $stats = app(IncomingMailImporter::class)->import((int) ($this->option('limit') ?: 0));
 
     $logger->info('Email-Import per Artisan wurde abgeschlossen.', $stats);
 
@@ -64,29 +28,51 @@ Artisan::command('mail:import {--limit= : Maximale Anzahl Mails fuer diesen Lauf
 
     if ($stats['failed'] > 0) {
         $this->warn("{$stats['failed']} Mails konnten nicht importiert werden.");
+
+        return 1;
     }
-})->purpose('Import forwarded travel mails from the configured mailbox');
-
-Artisan::command('admin:create {email} {--name=Administrator} {--password= : Passwort fuer den Admin}', function () {
-    $password = $this->option('password') ?: $this->secret('Admin-Passwort');
-
-    if (! $password) {
-        $this->error('Es wurde kein Passwort gesetzt.');
+    if ($stats['deferred'] > 0) {
+        $this->warn("{$stats['deferred']} Mails warten auf Wiederholung oder Klärung.");
 
         return 1;
     }
 
-    $user = User::query()->updateOrCreate(
-        ['email' => $this->argument('email')],
-        [
-            'name' => $this->option('name'),
-            'password' => Hash::make($password),
-            'is_admin' => true,
-            'email_verified_at' => now(),
-        ],
-    );
+    return 0;
+})->purpose('Import forwarded travel mails from the configured mailbox');
 
-    $this->info("Admin {$user->email} wurde erstellt oder aktualisiert.");
+Artisan::command('admin:create {email} {--name=Administrator}', function () {
+    $email = mb_strtolower(trim($this->argument('email')));
+    if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $this->error('Ungültige E-Mail-Adresse.');
+
+        return 1;
+    }
+    $password = $this->secret('Neues Admin-Passwort (mindestens 12 Zeichen)');
+    if (strlen((string) $password) < 12 || $password !== $this->secret('Passwort wiederholen')) {
+        $this->error('Passwörter stimmen nicht überein oder sind zu kurz.');
+
+        return 1;
+    }
+    app(EmailIdentity::class)->create($email, fn (string $email) => User::query()->create([
+        'name' => $this->option('name'), 'email' => $email,
+        'password' => Hash::make($password), 'is_admin' => true,
+    ]));
+    $this->info('Neues Administratorkonto erstellt.');
 
     return 0;
-})->purpose('Create or update an administrator account');
+})->purpose('Create a new administrator without modifying existing users');
+
+Artisan::command('mail:retry {id}', function () {
+    return app(ProcessLock::class)->run('mail-import-service', function () {
+        $mail = ImportedMail::query()->findOrFail($this->argument('id'));
+        if (! in_array($mail->status, ['failed', 'blocked', 'processing'], true)) {
+            $this->error('Nur fehlgeschlagene oder blockierte Importe können wiederholt werden.');
+
+            return 1;
+        }
+        $mail->update(['status' => 'pending', 'attempts' => 0]);
+        $this->info('Import für den nächsten Lauf freigegeben. Die Mail muss noch ungelesen im Postfach liegen.');
+
+        return 0;
+    });
+})->purpose('Retry a retained mail after resolving its error');

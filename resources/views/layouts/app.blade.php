@@ -11,7 +11,8 @@
     <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('brand/apple-touch-icon-167x167.png') }}">
     <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('brand/apple-touch-icon-152x152.png') }}">
     <link rel="apple-touch-icon" sizes="120x120" href="{{ asset('brand/apple-touch-icon-120x120.png') }}">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}?v={{ filemtime(public_path('build/app.css')) }}">
+    <script src="{{ asset('assets/app.js') }}?v={{ filemtime(public_path('assets/app.js')) }}" defer></script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <div class="border-b border-slate-200 bg-white">
@@ -92,17 +93,5 @@
 
         @yield('content')
     </main>
-    <script>
-        document.querySelectorAll('[data-mobile-menu-button]').forEach((button) => {
-            const menu = document.querySelector('[data-mobile-menu]');
-
-            button.addEventListener('click', () => {
-                const isOpen = !menu.classList.contains('hidden');
-
-                menu.classList.toggle('hidden', isOpen);
-                button.setAttribute('aria-expanded', String(!isOpen));
-            });
-        });
-    </script>
 </body>
 </html>

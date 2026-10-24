@@ -12,9 +12,7 @@ class DashboardController extends Controller
     {
         $trips = Trip::query()
             ->with(['bookings', 'tasks', 'documents'])
-            ->where(fn ($query) => $query
-                ->where('user_id', $request->user()->id)
-                ->orWhereHas('sharedUsers', fn ($sharedQuery) => $sharedQuery->whereKey($request->user()->id)))
+            ->visibleTo($request->user())
             ->latest('start_date')
             ->get()
             ->sortBy(function (Trip $trip): string {

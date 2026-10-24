@@ -13,9 +13,7 @@ class OpenTasksController extends Controller
         $tasks = Task::query()
             ->with('trip')
             ->where('status', 'open')
-            ->whereHas('trip', fn ($query) => $query
-                ->where('user_id', $request->user()->id)
-                ->orWhereHas('sharedUsers', fn ($sharedQuery) => $sharedQuery->whereKey($request->user()->id)))
+            ->whereHas('trip', fn ($query) => $query->visibleTo($request->user()))
             ->get()
             ->sortBy(fn (Task $task) => sprintf(
                 '%d-%012d-%d',

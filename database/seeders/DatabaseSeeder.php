@@ -13,6 +13,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException('Demo-Seeder ist ausschliesslich lokal oder im Test erlaubt.');
+        }
+
         $user = User::query()->create([
             'name' => 'TripControl Demo',
             'email' => 'demo@tripcontrol.test',

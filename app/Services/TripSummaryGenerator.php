@@ -3,21 +3,23 @@
 namespace App\Services;
 
 use App\Models\Trip;
-use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class TripSummaryGenerator
 {
+    use UsesOpenAi;
+
     public function regenerate(Trip $trip): ?string
     {
         if (! config('ai.openai.api_key')) {
             return null;
         }
 
-        $trip->load(['bookings.documents', 'tasks', 'documents.booking']);
+        app(AiBudget::class)->consume(request()->user()?->id ?? $trip->user_id);
+        $trip->load(['bookings', 'tasks', 'documents.booking']);
 
         $response = $this->client()->post('https://api.openai.com/v1/responses', [
+            'store' => false,
             'model' => config('ai.openai.summary_model') ?: config('ai.openai.model'),
             'input' => [
                 [
@@ -30,7 +32,7 @@ class TripSummaryGenerator
         ]);
 
         if ($response->failed()) {
-            throw new RuntimeException('OpenAI konnte die Reise-Zusammenfassung nicht erstellen: '.$response->body());
+            throw new RuntimeException('OpenAI konnte die Reise-Zusammenfassung nicht erstellen.');
         }
 
         $summary = trim($this->outputText($response->json()));
@@ -50,7 +52,6 @@ class TripSummaryGenerator
             ->map(fn ($booking) => implode(' | ', array_filter([
                 $booking->title,
                 $booking->provider,
-                $booking->booking_reference ? 'Ref: '.$booking->booking_reference : null,
                 $booking->date_range_label !== '-' ? 'Zeitraum: '.$booking->date_range_label : null,
                 'Status: '.$booking->booking_status_label,
                 'Zahlung: '.$booking->payment_status_label,
@@ -88,7 +89,6 @@ class TripSummaryGenerator
             'Destination: '.($trip->destination ?: '-'),
             'Zeitraum: '.($trip->start_date?->format('d.m.Y') ?? '-').' - '.($trip->end_date?->format('d.m.Y') ?? '-'),
             'Status: '.$trip->status_label,
-            'Notizen: '.($trip->notes ?: '-'),
             'Buchungen bestätigt: '.$trip->booking_completion_percentage.'%',
             'Zahlungen erledigt: '.$trip->payment_completion_percentage.'%',
             'Total CHF: '.number_format($trip->total_amount_chf, 2),
@@ -106,29 +106,5 @@ class TripSummaryGenerator
             'Offene Tasks:',
             $tasks ?: '-',
         ]);
-    }
-
-    private function client(): PendingRequest
-    {
-        return Http::withToken(config('ai.openai.api_key'))
-            ->timeout(config('ai.openai.timeout'))
-            ->acceptJson();
-    }
-
-    private function outputText(array $response): string
-    {
-        if (isset($response['output_text'])) {
-            return $response['output_text'];
-        }
-
-        foreach ($response['output'] ?? [] as $output) {
-            foreach ($output['content'] ?? [] as $content) {
-                if (($content['type'] ?? null) === 'output_text' && isset($content['text'])) {
-                    return $content['text'];
-                }
-            }
-        }
-
-        throw new RuntimeException('OpenAI-Antwort enthaelt keinen Text.');
     }
 }

@@ -13,9 +13,7 @@ class DocumentOverviewController extends Controller
     {
         $documentsByTrip = Document::query()
             ->with(['trip', 'booking'])
-            ->whereHas('trip', fn ($query) => $query
-                ->where('user_id', $request->user()->id)
-                ->orWhereHas('sharedUsers', fn ($sharedQuery) => $sharedQuery->whereKey($request->user()->id)))
+            ->whereHas('trip', fn ($query) => $query->visibleTo($request->user()))
             ->get()
             ->groupBy('trip_id')
             ->sortBy(fn (Collection $documents) => $this->tripSortKey($documents->first()->trip))

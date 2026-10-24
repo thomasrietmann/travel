@@ -6,19 +6,20 @@ use App\Models\Booking;
 use App\Models\Document;
 use App\Models\Trip;
 use App\Models\User;
-use Illuminate\Http\Client\PendingRequest;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use RuntimeException;
-use Throwable;
 
 class MailAiExtractor
 {
+    use UsesOpenAi;
+
     public function extract(User $user, string $subject, string $body, array $attachments): array
     {
         if (! config('ai.openai.api_key')) {
             throw new RuntimeException('OPENAI_API_KEY ist nicht gesetzt.');
         }
+
+        app(AiBudget::class)->consume($user->id);
 
         $uploadedFileIds = [];
 
@@ -48,6 +49,7 @@ class MailAiExtractor
             }
 
             $response = $this->client()->post('https://api.openai.com/v1/responses', [
+                'store' => false,
                 'model' => config('ai.openai.model'),
                 'input' => [
                     [
@@ -66,7 +68,7 @@ class MailAiExtractor
             ]);
 
             if ($response->failed()) {
-                throw new RuntimeException('OpenAI konnte die Mail nicht auswerten: '.$response->body());
+                throw new RuntimeException('OpenAI konnte die Mail nicht auswerten.');
             }
 
             $data = json_decode($this->outputText($response->json()), true);
@@ -78,11 +80,7 @@ class MailAiExtractor
             return $data;
         } finally {
             foreach ($uploadedFileIds as $uploadedFileId) {
-                try {
-                    $this->client()->delete("https://api.openai.com/v1/files/{$uploadedFileId}");
-                } catch (Throwable) {
-                    // Cleanup must not hide a successful import.
-                }
+                $this->deleteUploadedFile($uploadedFileId);
             }
         }
     }
@@ -93,20 +91,15 @@ class MailAiExtractor
             ->attach('file', $attachment['contents'], $attachment['filename'] ?? 'mail-attachment')
             ->post('https://api.openai.com/v1/files', [
                 'purpose' => 'user_data',
+                'expires_after[anchor]' => 'created_at',
+                'expires_after[seconds]' => 3600,
             ]);
 
         if ($response->failed() || ! $response->json('id')) {
-            throw new RuntimeException('Upload zu OpenAI ist fehlgeschlagen: '.$response->body());
+            throw new RuntimeException('Upload zu OpenAI ist fehlgeschlagen.');
         }
 
         return $response->json('id');
-    }
-
-    private function client(): PendingRequest
-    {
-        return Http::withToken(config('ai.openai.api_key'))
-            ->timeout(config('ai.openai.timeout'))
-            ->acceptJson();
     }
 
     private function prompt(User $user, string $subject, string $body): string
@@ -216,22 +209,5 @@ class MailAiExtractor
                 'document_type',
             ],
         ];
-    }
-
-    private function outputText(array $response): string
-    {
-        if (isset($response['output_text'])) {
-            return $response['output_text'];
-        }
-
-        foreach ($response['output'] ?? [] as $output) {
-            foreach ($output['content'] ?? [] as $content) {
-                if (($content['type'] ?? null) === 'output_text' && isset($content['text'])) {
-                    return $content['text'];
-                }
-            }
-        }
-
-        throw new RuntimeException('OpenAI-Antwort enthaelt keinen Text.');
     }
 }

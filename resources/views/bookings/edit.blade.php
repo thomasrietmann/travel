@@ -19,7 +19,7 @@
         </div>
     </form>
 
-    <form id="delete-booking" method="POST" action="{{ route('bookings.destroy', $booking) }}" onsubmit="return confirm('Buchung wirklich loeschen?')">
+    <form id="delete-booking" method="POST" action="{{ route('bookings.destroy', $booking) }}" data-confirm="Buchung wirklich loeschen?">
         @csrf
         @method('DELETE')
     </form>

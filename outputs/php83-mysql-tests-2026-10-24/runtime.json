@@ -1,0 +1,143 @@
+{
+    "php": "8.3.36",
+    "os": "Darwin",
+    "architecture": "arm64",
+    "openssl": "OpenSSL 3.6.2 7 Apr 2026",
+    "mysql": {
+        "version": "8.0.46",
+        "sql_mode": "ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION",
+        "default_storage_engine": "InnoDB",
+        "skip_networking": 1,
+        "test_database": "tripcontrol_test",
+        "test_user": "tripcontrol_test_user@localhost"
+    },
+    "tables": [
+        {
+            "TABLE_NAME": "bookings",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "cache",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "cache_locks",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "document_file_deletions",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "documents",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "email_identity_lock",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "failed_jobs",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "imported_mails",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "job_batches",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "jobs",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "migrations",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "password_reset_tokens",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "sessions",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "tasks",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "trip_user",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "trips",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "user_birthdays",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "user_email_aliases",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        },
+        {
+            "TABLE_NAME": "users",
+            "ENGINE": "InnoDB",
+            "TABLE_COLLATION": "utf8mb4_unicode_ci"
+        }
+    ],
+    "extensions": [
+        "Core",
+        "date",
+        "libxml",
+        "openssl",
+        "pcre",
+        "sqlite3",
+        "zlib",
+        "ctype",
+        "dom",
+        "fileinfo",
+        "filter",
+        "hash",
+        "iconv",
+        "json",
+        "mbstring",
+        "SPL",
+        "session",
+        "PDO",
+        "standard",
+        "mysqlnd",
+        "pdo_sqlite",
+        "Phar",
+        "random",
+        "Reflection",
+        "pdo_mysql",
+        "SimpleXML",
+        "tokenizer",
+        "xml",
+        "xmlreader",
+        "xmlwriter"
+    ]
+}

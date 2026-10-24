@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use App\Services\EmailIdentity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,23 +19,25 @@ class RegisteredUserController extends Controller
         return view('auth.register');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, EmailIdentity $identities): RedirectResponse
     {
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email', 'unique:user_email_aliases,email'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        $user = User::query()->create([
+        $user = $identities->create($validated['email'], fn (string $email) => User::query()->create([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => $email,
             'password' => Hash::make($validated['password']),
-        ]);
+        ]));
 
-        event(new Registered($user));
+        // Ownership verification is explicitly requested in Settings, so SMTP outages do not break registration.
 
         Auth::login($user);
+        $request->session()->regenerate();
 
         return redirect()->route('dashboard');
     }

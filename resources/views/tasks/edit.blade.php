@@ -19,7 +19,7 @@
         </div>
     </form>
 
-    <form id="delete-task" method="POST" action="{{ route('tasks.destroy', $task) }}" onsubmit="return confirm('Aufgabe wirklich loeschen?')">
+    <form id="delete-task" method="POST" action="{{ route('tasks.destroy', $task) }}" data-confirm="Aufgabe wirklich loeschen?">
         @csrf
         @method('DELETE')
     </form>

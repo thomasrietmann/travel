@@ -48,9 +48,7 @@ class CountdownController extends Controller
     {
         return Trip::query()
             ->with(['bookings', 'tasks'])
-            ->where(fn ($query) => $query
-                ->where('user_id', $user->id)
-                ->orWhereHas('sharedUsers', fn ($sharedQuery) => $sharedQuery->whereKey($user->id)))
+            ->visibleTo($user)
             ->whereDate('start_date', '>', today())
             ->orderBy('start_date')
             ->get();

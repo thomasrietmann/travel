@@ -1,156 +1,82 @@
 # TripControl
 
-TripControl ist eine persoenliche Reise-Uebersichts-App fuer Buchungen, Zahlungen, Aufgaben und Dokumente. Der Fokus liegt nicht auf Planung, sondern auf Klarheit: Was existiert, was ist gebucht, was ist bezahlt, was fehlt noch?
+TripControl verwaltet Reisen, Buchungen, Zahlungen, Aufgaben, Dokumente und geteilte Reiseübersichten. Die Anwendung läuft mit Laravel 13 und Blade; Metanet-Produktion verwendet laut Betreiber PHP 8.3.36 und MySQL.
 
-## 1. Installation
+**Bestehende Produktion aktualisieren:** ausschliesslich nach [DEPLOY_METANET.md](DEPLOY_METANET.md) vorgehen. Keine Neuinstallation über vorhandene Daten ausführen. [Umsetzungsstand und Prüfgrenzen](SECURITY_IMPLEMENTATION.md).
 
-Voraussetzungen:
+## Neue lokale Entwicklungsinstallation
 
-- PHP 8.3 oder neuer
-- Composer
-- SQLite-Erweiterung fuer PHP
-
-Projekt vorbereiten:
+Nur in einem neuen, getrennten Verzeichnis mit eigener Datenbank:
 
 ```bash
 composer install
 cp .env.example .env
 php artisan key:generate
-touch database/database.sqlite
-php artisan storage:link
-```
-
-Optional fuer den AI-Buchungsimport:
-
-```dotenv
-OPENAI_API_KEY=
-OPENAI_BOOKING_MODEL=gpt-5.4-mini
-OPENAI_SUMMARY_MODEL=gpt-5.4-mini
-OPENAI_TIMEOUT=90
-```
-
-Optional fuer den Mail-Import ueber `travel@aufbollen.ch`:
-
-```dotenv
-MAIL_IMPORT_ENABLED=true
-MAIL_IMPORT_RECIPIENT=travel@aufbollen.ch
-MAIL_IMPORT_IMAP_MAILBOX="{imap.example.com:993/imap/ssl}INBOX"
-MAIL_IMPORT_IMAP_USERNAME=travel@aufbollen.ch
-MAIL_IMPORT_IMAP_PASSWORD=
-MAIL_IMPORT_IMAP_SEARCH=UNSEEN
-MAIL_IMPORT_MAX_MESSAGES=10
-MAIL_IMPORT_MARK_SEEN=true
-```
-
-Der Mail-Import benoetigt die PHP-IMAP-Erweiterung. Das Passwort des Mailkontos wird nur im `.env` hinterlegt und nicht im Code gespeichert.
-
-TripControl nutzt Blade und Tailwind CSS ueber den offiziellen CDN-Modus fuer dieses schlanke MVP. Es ist deshalb kein Node/NPM-Build notwendig.
-
-## 2. Migration + Seeding
-
-```bash
-php artisan migrate:fresh --seed
-```
-
-Der Seeder erstellt einen Demo-User und folgende Beispielreisen:
-
-- Florida Coastertrip 2025
-- Phantasialand September 2025
-- Schwedenrundreise Sommer
-- Norwegen Camperreise 2026
-- Schweiz-Rundreise
-
-## 3. Start der App
-
-```bash
+php artisan migrate
 php artisan serve
 ```
 
-Danach ist die App unter `http://127.0.0.1:8000` erreichbar.
+Die leere SQLite-Datei dient ausschliesslich der lokalen Entwicklung; alternativ eine eigene MySQL-Entwicklungsdatenbank konfigurieren. Für optionale lokale Beispieldaten `php artisan db:seed` verwenden. Der Demo-Seeder ist ausserhalb von `local`/`testing` gesperrt und darf niemals produktive Konten erzeugen. Die Demo-Konten verwenden ausschliesslich lokal `password`.
 
-## 4. Test-Login
+Dokumente liegen privat. Ein `storage:link` ist dafür nicht erforderlich. Vorhandene Fallback-Pfade werden beim Lesen weiterhin berücksichtigt.
 
-```text
-E-Mail: demo@tripcontrol.test
-Passwort: password
-```
+## Tests und Assets
 
-## 5. Naechste moegliche Features
+Die Staging-Abnahme wurde vom Betreiber am 24.10.2026 bestätigt. Für das bestehende Produktivsystem ist das [kontrollierte Upgrade-Skript](UPGRADE_METANET.md) vorbereitet: `php ops/metanet/upgrade.php` prüft standardmässig nur; Änderungen benötigen ausdrücklich `--apply` und die dokumentierten Schutzbedingungen.
 
-- Tagesaktuelle Waehrungskurse statt lokaler Fixkurse
-- Filter und Suche im Dashboard
-- Task-Erinnerungen per E-Mail
-- Dokumentenvorschau fuer PDF und Bilder
-- Export einer Reiseuebersicht als PDF
-- Kalenderansicht fuer Deadlines und Reisedaten
-- Mehrere Reisende oder Familienmitglieder pro Reise
-- AI-Import fuer Buchungen weiter verfeinern, z.B. Vorpruefung statt direkter Anlage
-
-## AI-Buchungsimport
-
-Wenn `OPENAI_API_KEY` gesetzt ist, kann auf der Reise-Detailseite unter "Buchungen" ein PDF, Screenshot oder Bild hochgeladen werden. TripControl sendet die Datei an die OpenAI Responses API, liest daraus strukturierte Buchungsdaten aus, erstellt die Buchung und speichert die Datei als Dokumentanhang.
-
-Ohne API-Key bleibt die normale manuelle Buchungserfassung verfuegbar.
-
-Nach dem Erstellen einer Buchung generiert TripControl mit OpenAI automatisch eine kurze Reise-Summary und speichert sie direkt an der Reise. Bei Bearbeitungen oder anderen Aenderungen wird die Summary bewusst nicht neu erstellt.
-
-## Mail-Import
-
-Benutzer koennen Buchungs- oder Reise-Mails aus ihrer persoenlichen Mailbox an `travel@aufbollen.ch` weiterleiten. TripControl erkennt den Benutzer anhand der Absenderadresse. Die Login-Adresse zaehlt automatisch; weitere persoenliche Adressen koennen unter "Einstellungen" erfasst werden.
-
-Der Import wird per Artisan-Command gestartet:
+Die [Metanet-Staging-Abnahme](STAGING_ABNAHME_METANET.md) enthält die vorbereitete Backup-/Restore-Probe, die SMTP-/IMAP-Abnahme und die Konfigurationsvorlage für `travel-at.aufbollen.ch`. `staging:inventory` und `staging:mail-check` laufen nur bei expliziter Freigabe in `APP_ENV=staging`; Staging-Mails dürfen ausschliesslich an `STAGING_MAIL_RECIPIENT` gehen. Auf Produktion bleiben die Staging-Kommandos gesperrt.
 
 ```bash
-php artisan mail:import
+composer test
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm run build
 ```
 
-Optional mit Limit:
+Die Tests verwenden standardmässig SQLite im Speicher und gefälschte HTTP-/Storage-Dienste. Es werden weder echte OpenAI-Aufrufe noch echte Mails gesendet. Für den separaten MySQL-Testlauf siehe Deploymentanleitung. Die Suite zerstört ihre Testdatenbank; sie verweigert Datenbanknamen ausser `:memory:` oder einem Namen mit `_test` am Ende und verweigert einen anderen Anwendungsmodus als `testing`.
+
+PHP 8.3.36 mit MySQL 8.0 und SQLite ist in `.github/workflows/tests.yml` vorgesehen. Lokal wurden mit PHP 8.3.36 und MySQL 8.0.46 einschliesslich Staging-, Restore- und Upgrade-Prüfungen alle **64 Tests / 459 Assertions** erfolgreich ausgeführt; [Protokolle und Grenzen](outputs/release-upgrade-2026-10-24/README.md). Die MySQL-Sperr-/Upgrade-Prüfungen werden unter SQLite übersprungen. Der optionale Restore-Test benötigt zusätzlich MySQL-Clientwerkzeuge und eine separate leere Testdatenbank. Die gebauten Assets werden mit ausgeliefert; auf Metanet ist kein Node-Prozess nötig. Tailwind wird lokal gebaut, JavaScript von der eigenen Domain geladen.
+
+## Architektur
+
+An LEG orientiert: kleine Controller, FormRequests, Policies, fachliche Dienste, lokale Assets und Cron statt dauerhaft laufender Worker. TripControl behält seine vorhandenen Tabellen, bcrypt-Passwörter und Freigaberegeln.
+
+- `DocumentStorage` bündelt private Uploads, Prüfsummen, Transaktionskompensation, alte Lesepfade und vorgemerkte Bereinigung.
+- `BookingData` vereinheitlicht Validierung und Normalisierung manueller und importierter Buchungen.
+- `Trip::visibleTo()` bündelt die Sichtbarkeit eigener und geteilter Reisen.
+- `EmailIdentity` serialisiert Registrierungen und Alias-Erstellung über beide Tabellen.
+- `IncomingMailImporter` orchestriert `ImapMailbox`, `TrustedMailSender`, `MailContentReader` und `MailPdfRenderer`. Alle Aufrufwege teilen eine Prozesssperre.
+- `UsesOpenAi` und `AiBudget` bündeln API-Verhalten und Verbrauchslimits. Sicherheitsheader und minimierte Aktionslogs liegen in Middleware.
+
+## AI- und Mailimport
+
+Ein gesetzter `OPENAI_API_KEY` aktiviert die bestehende AI-Auswertung. Der Webimport verarbeitet bis zu drei Dateien à 10 MiB. Ohne API-Schlüssel bleiben manuelle Buchungen verfügbar. Erfolgreiche Buchungen bleiben auch bei fehlgeschlagener Zusammenfassung erhalten.
+
+Weitergeleitete Mails werden nur einem Benutzer mit bestätigter, eindeutiger Adresse und akzeptierter Absenderauthentifizierung zugeordnet. SMTP-Daten werden in `.env` hinterlegt; Bestätigungsmails werden unter Einstellungen angefordert. Bestehende Benutzer können sich auch ohne Bestätigung weiterhin anmelden.
+
+Die Metanet-Header-Vertrauensgrenze muss vor Aktivierung geprüft werden. `MAIL_IMPORT_AUTH_RESULTS_TRUSTED` ist standardmässig `false`. Ohne diese Freigabe erfolgt kein Mailimport. Die konkrete Einrichtung und Tests stehen in der Deploymentanleitung.
 
 ```bash
-php artisan mail:import --limit=5
+php artisan mail:import --limit=1
+php artisan mail:retry ID
 ```
 
-TripControl liest ungelesene Mails aus der konfigurierten IMAP-Mailbox, wertet Mailtext und Anhaenge mit OpenAI aus und erstellt daraus eine Buchung. Wenn keine passende bestehende Reise erkannt wird, wird eine neue Reise angelegt. Importierte Mails werden anhand ihrer Message-ID protokolliert, damit sie nicht doppelt verarbeitet werden.
+Fehlerhafte Mails bleiben ungelesen, Wiederholungen sind begrenzt. Neue Importidentitäten enthalten Mailbox, UIDVALIDITY und UID. Bereits erfolgreiche alte Message-ID-Einträge bleiben bei der Duplikatprüfung berücksichtigt. Neue Mail-PDFs enthalten sicher escapeten Text; bereits gespeicherte Dokumente werden nicht neu gerendert.
 
-## Hosting-Pfade
-
-Auf Hostings mit Chroot- oder Alias-Pfaden koennen Laravel-Storage-Pfade per `.env` absolut gesetzt werden:
-
-```dotenv
-VIEW_PATH=/home/httpd/vhosts/example.ch/travel.git/resources/views
-VIEW_COMPILED_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/framework/views
-LOG_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/logs/laravel.log
-SESSION_FILES_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/framework/sessions
-CACHE_FILE_PATH=/home/httpd/vhosts/example.ch/travel.git/storage/framework/cache/data
-FILESYSTEM_LOCAL_ROOT=/home/httpd/vhosts/example.ch/travel.git/storage/app/private
-FILESYSTEM_PUBLIC_ROOT=/home/httpd/vhosts/example.ch/travel.git/storage/app/public
-FILESYSTEM_PRIVATE_FALLBACK_ROOTS=/travel.git/storage/app/private
-FILESYSTEM_PUBLIC_FALLBACK_ROOTS=/travel.git/storage/app/public
-```
-
-`FILESYSTEM_PRIVATE_FALLBACK_ROOTS` und `FILESYSTEM_PUBLIC_FALLBACK_ROOTS` sind optional und koennen mehrere kommaseparierte Storage-Wurzeln enthalten. Das ist hilfreich, wenn Web- und Cron-Prozess auf demselben Hosting unterschiedliche absolute Pfade sehen.
-
-Bestehende Dokumente aus frueheren Versionen koennen vom public Storage in den privaten Storage verschoben werden:
+## Betrieb
 
 ```bash
+php artisan deployment:check --probe-storage
 php artisan documents:migrate-private
+php artisan documents:migrate-private --apply
+php artisan documents:cleanup --limit=100
 ```
 
-## Waehrungskurse
+Die Dokumentmigration inventarisiert standardmässig; `--apply` kopiert nach Prüfsummenprüfung. **Sie löscht keine Quellen.** Öffentlich erreichbare Legacy-Dokumente müssen zusätzlich im Webserver gesperrt werden. Die Bereinigung löscht nur ausdrücklich vorgemerkte, nicht mehr referenzierte Dateien.
 
-Die App rechnet Buchungen mit festen Kursen in CHF um. Standardkurse liegen in `config/exchange.php`.
+`FILESYSTEM_LOCAL_ROOT` bezeichnet die einzige Schreibablage. Private/public Fallback-Wurzeln dürfen als kommaseparierte Listen zum Lesen erhalten bleiben. Web und CLI müssen dieselbe echte private Ablage und denselben `PROCESS_LOCK_PATH` erreichen. Funktionierende Produktionspfade nicht durch Beispielpfade ersetzen.
 
-Fuer lokale oder serverseitige Anpassungen eine nicht versionierte Datei anlegen:
+`php artisan admin:create EMAIL` erstellt ausschliesslich ein neues Administratorkonto. `php artisan account:password EMAIL` ändert nach verdeckter Passwortabfrage ein bestehendes Konto ohne Datenverlust und widerruft dessen Datenbank-Sessions.
 
-```bash
-cp config/exchange.local.example.php config/exchange.local.php
-```
+## Währungskurse
 
-Danach in `config/exchange.local.php` die Werte unter `rates_to_chf` anpassen. Beispiel: `EUR => 0.9150` bedeutet `1 EUR = 0.9150 CHF`.
-
-Nach Aenderungen auf einem gecachten Server:
-
-```bash
-php artisan optimize:clear
-php artisan config:cache
-```
+Die festen CHF-Umrechnungskurse liegen in `config/exchange.php`. Servereigene Anpassungen bleiben in der nicht versionierten Datei `config/exchange.local.php`; bei einer neuen lokalen Installation kann `config/exchange.local.example.php` als Vorlage dienen. `EUR => 0.9150` bedeutet `1 EUR = 0.9150 CHF`. Nach Änderungen gezielt `php artisan config:cache` im korrekten Ausführungskontext ausführen.

@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\AuditChanges;
+use App\Http\Middleware\EnsureUserIsAdmin;
+use App\Http\Middleware\RedirectAdminUsers;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,9 +20,12 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [AuditChanges::class]);
+        $middleware->append(SecurityHeaders::class);
+        $middleware->trustHosts(at: fn () => ['^'.preg_quote(parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost', '/').'$'], subdomains: false);
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
-            'not_admin' => \App\Http\Middleware\RedirectAdminUsers::class,
+            'admin' => EnsureUserIsAdmin::class,
+            'not_admin' => RedirectAdminUsers::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -5,20 +5,20 @@ return [
     'disks' => [
         'local' => [
             'driver' => 'local',
-            'root' => env('FILESYSTEM_LOCAL_ROOT', storage_path('app/private')),
-            'serve' => true,
+            'root' => (env('FILESYSTEM_LOCAL_ROOT') ?: storage_path('app/private')),
+            'serve' => false,
             'throw' => false,
         ],
         'public' => [
             'driver' => 'local',
-            'root' => env('FILESYSTEM_PUBLIC_ROOT', storage_path('app/public')),
+            'root' => (env('FILESYSTEM_PUBLIC_ROOT') ?: storage_path('app/public')),
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,
         ],
     ],
     'links' => [
-        public_path('storage') => env('FILESYSTEM_PUBLIC_ROOT', storage_path('app/public')),
+        public_path('storage') => (env('FILESYSTEM_PUBLIC_ROOT') ?: storage_path('app/public')),
     ],
     'private_fallback_roots' => array_values(array_filter(array_map(
         'trim',

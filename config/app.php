@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'lock_path' => env('PROCESS_LOCK_PATH') ?: storage_path('framework/locks'),
     'name' => env('APP_NAME', 'TripControl'),
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),

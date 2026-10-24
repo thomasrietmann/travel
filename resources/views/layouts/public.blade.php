@@ -14,7 +14,8 @@
         <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('brand/apple-touch-icon-152x152.png') }}">
         <link rel="apple-touch-icon" sizes="120x120" href="{{ asset('brand/apple-touch-icon-120x120.png') }}">
     @endif
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ asset('build/app.css') }}?v={{ filemtime(public_path('build/app.css')) }}">
+    <script src="{{ asset('assets/app.js') }}?v={{ filemtime(public_path('assets/app.js')) }}" defer></script>
 </head>
 <body class="min-h-screen bg-slate-50 text-slate-900 antialiased">
     <main class="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">

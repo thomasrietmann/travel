@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Trip>
+ * @extends Factory<Trip>
  */
 class TripFactory extends Factory
 {
@@ -21,7 +21,7 @@ class TripFactory extends Factory
             'type' => fake()->randomElement(Trip::TYPES),
             'destination' => fake()->country(),
             'start_date' => $startDate,
-            'end_date' => fake()->dateTimeBetween($startDate, '+14 days'),
+            'end_date' => (clone $startDate)->modify('+14 days'),
             'status' => fake()->randomElement(Trip::STATUSES),
             'notes' => fake()->optional()->sentence(),
         ];

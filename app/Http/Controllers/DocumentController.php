@@ -5,9 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\DocumentRequest;
 use App\Models\Document;
 use App\Models\Trip;
+use App\Services\DocumentStorage;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -15,8 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
-    private const DOCUMENT_DISK = 'local';
-    private const LEGACY_DOCUMENT_DISK = 'public';
+    public function __construct(private readonly DocumentStorage $storage) {}
 
     public function create(Trip $trip): View
     {
@@ -24,7 +22,7 @@ class DocumentController extends Controller
 
         return view('documents.create', [
             'trip' => $trip->load('bookings'),
-            'document' => new Document(),
+            'document' => new Document,
         ]);
     }
 
@@ -42,17 +40,18 @@ class DocumentController extends Controller
         $files = $request->file('files', []);
         $uploaded = 0;
 
-        foreach ($files as $file) {
-            $trip->documents()->create([
-                'booking_id' => $validated['booking_id'] ?? null,
-                'title' => $this->documentTitle($validated['title'] ?? null, $file->getClientOriginalName(), count($files)),
-                'file_path' => $file->store("documents/{$trip->id}", self::DOCUMENT_DISK),
-                'document_type' => $validated['document_type'],
-                'notes' => $validated['notes'] ?? null,
-            ]);
-
-            $uploaded++;
-        }
+        $this->storage->transaction(function () use ($files, $trip, $validated, &$uploaded): void {
+            foreach ($files as $file) {
+                $trip->documents()->create([
+                    'booking_id' => $validated['booking_id'] ?? null,
+                    'title' => $this->documentTitle($validated['title'] ?? null, $file->getClientOriginalName(), count($files)),
+                    'file_path' => $this->storage->upload($trip->id, $file),
+                    'document_type' => $validated['document_type'],
+                    'notes' => $validated['notes'] ?? null,
+                ]);
+                $uploaded++;
+            }
+        });
 
         $message = $uploaded === 1 ? 'Dokument wurde hochgeladen.' : "{$uploaded} Dokumente wurden hochgeladen.";
 
@@ -73,7 +72,7 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        $location = $this->documentLocation($document);
+        $location = $this->storage->locate($document->file_path);
 
         if (! $location) {
             return back()->with('error', 'Die Datei wurde nicht gefunden. Bitte lade das Dokument erneut hoch.');
@@ -86,11 +85,7 @@ class DocumentController extends Controller
             $fileName .= ".{$extension}";
         }
 
-        if (isset($location['disk'])) {
-            return Storage::disk($location['disk'])->download($document->file_path, $fileName);
-        }
-
-        return response()->download($location['path'], $fileName);
+        return response()->download($location, $fileName, ['X-Content-Type-Options' => 'nosniff']);
     }
 
     public function update(DocumentRequest $request, Document $document): RedirectResponse
@@ -104,13 +99,16 @@ class DocumentController extends Controller
             'Die ausgewaehlte Buchung gehoert nicht zu dieser Reise.'
         );
 
-        if ($request->hasFile('file')) {
-            $this->deleteDocumentFile($document);
-            $validated['file_path'] = $request->file('file')->store("documents/{$document->trip_id}", self::DOCUMENT_DISK);
-        }
-
-        unset($validated['file']);
-        $document->update($validated);
+        $this->storage->transaction(function () use ($request, $document, $validated): void {
+            // Lock the row so two replacements cannot lose track of the previous file.
+            $current = Document::query()->lockForUpdate()->findOrFail($document->id);
+            if ($request->hasFile('file')) {
+                $validated['file_path'] = $this->storage->upload($current->trip_id, $request->file('file'));
+                $this->storage->scheduleDeletion($current->file_path);
+            }
+            unset($validated['file']);
+            $current->update($validated);
+        });
 
         return redirect()->route('trips.show', $document->trip)->with('status', 'Dokument wurde aktualisiert.');
     }
@@ -120,8 +118,11 @@ class DocumentController extends Controller
         $this->authorize('delete', $document);
 
         $trip = $document->trip;
-        $this->deleteDocumentFile($document);
-        $document->delete();
+        $this->storage->transaction(function () use ($document): void {
+            $current = Document::query()->lockForUpdate()->findOrFail($document->id);
+            $this->storage->scheduleDeletion($current->file_path);
+            $current->delete();
+        });
 
         return redirect()->route('trips.show', $trip)->with('status', 'Dokument wurde geloescht.');
     }
@@ -134,64 +135,4 @@ class DocumentController extends Controller
 
         return pathinfo($originalName, PATHINFO_FILENAME) ?: 'Dokument';
     }
-
-    private function documentLocation(Document $document): ?array
-    {
-        if (Storage::disk(self::DOCUMENT_DISK)->exists($document->file_path)) {
-            return ['disk' => self::DOCUMENT_DISK];
-        }
-
-        if (Storage::disk(self::LEGACY_DOCUMENT_DISK)->exists($document->file_path)) {
-            return ['disk' => self::LEGACY_DOCUMENT_DISK];
-        }
-
-        foreach ($this->legacyAbsolutePaths($document) as $path) {
-            if (File::exists($path)) {
-                return ['path' => $path];
-            }
-        }
-
-        return null;
-    }
-
-    private function deleteDocumentFile(Document $document): void
-    {
-        $location = $this->documentLocation($document);
-
-        if (! $location) {
-            return;
-        }
-
-        if (isset($location['disk'])) {
-            Storage::disk($location['disk'])->delete($document->file_path);
-
-            return;
-        }
-
-        File::delete($location['path']);
-    }
-
-    private function legacyAbsolutePaths(Document $document): array
-    {
-        $privateFallbacks = collect(config('filesystems.private_fallback_roots', []))
-            ->filter()
-            ->map(fn (string $root): string => rtrim($root, '/').'/'.$document->file_path)
-            ->all();
-        $publicFallbacks = collect(config('filesystems.public_fallback_roots', []))
-            ->filter()
-            ->map(fn (string $root): string => rtrim($root, '/').'/'.$document->file_path)
-            ->all();
-
-        return array_values(array_unique([
-            Storage::disk(self::DOCUMENT_DISK)->path($document->file_path),
-            Storage::disk(self::LEGACY_DOCUMENT_DISK)->path($document->file_path),
-            storage_path('app/private/'.$document->file_path),
-            storage_path('app/public/'.$document->file_path),
-            base_path('storage/app/private/'.$document->file_path),
-            base_path('storage/app/public/'.$document->file_path),
-            ...$privateFallbacks,
-            ...$publicFallbacks,
-        ]));
-    }
-
 }
