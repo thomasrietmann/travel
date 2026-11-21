@@ -5,7 +5,8 @@ permissions:
 jobs:
   tests:
     name: PHP ${{ matrix.php }} / ${{ matrix.database }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
     strategy:
       matrix:
         php: ['8.3.21', '8.3.36']
@@ -26,19 +27,28 @@ jobs:
       DB_HOST: 127.0.0.1
       DB_USERNAME: root
       DB_PASSWORD: test-only
+      TC_PHP_VERSION: ${{ matrix.php }}
     steps:
       - uses: actions/checkout@v4
+      # Bootstrap Composer only; setup-php resolves PHP patch inputs to major.minor.
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: ${{ matrix.php }}
-          extensions: mbstring, dom, fileinfo, pdo_sqlite, pdo_mysql, imap
+          php-version: '8.3'
+          tools: composer:v2
           coverage: none
+      - name: Build exact PHP patch release
+        run: bash ops/ci/build-php.sh
+      - name: Verify actual PHP runtime and extensions
+        run: |
+          php -v
+          php -r 'if (PHP_VERSION !== getenv("TC_PHP_VERSION")) { fwrite(STDERR, "Unexpected PHP runtime: ".PHP_VERSION."\n"); exit(1); } foreach (["mbstring", "dom", "fileinfo", "pdo_sqlite", "pdo_mysql", "imap"] as $extension) { if (!extension_loaded($extension)) { fwrite(STDERR, "Missing PHP extension: ".$extension."\n"); exit(1); } }'
       - run: composer install --no-interaction --prefer-dist
       - run: composer check-platform-reqs
       - run: composer validate --strict --no-check-publish
       - run: composer audit --locked
       - run: rg --files app bootstrap config database routes tests ops -g '*.php' -0 | xargs -0 -n 1 php -l
       - run: php -l cron-mail-import.php
+      - run: bash -n ops/ci/build-php.sh
       - name: Prepare separate empty restore database
         if: matrix.database == 'mysql'
         run: |
