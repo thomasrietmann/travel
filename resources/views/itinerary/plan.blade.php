@@ -95,6 +95,11 @@
                             <a href="{{ route('bookings.edit', $booking) }}" class="font-medium text-slate-950 hover:underline">{{ $booking->title }}</a>
                             <p class="mt-0.5 text-xs text-slate-600">{{ $entry['reason'] }} @if ($booking->start_date || $booking->end_date) · {{ $booking->date_range_label }} @endif</p>
                             @include('itinerary.booking-meta')
+                            @if ($booking->category === 'flight')
+                                <div class="mt-3">
+                                    @include('itinerary.flight-import')
+                                </div>
+                            @endif
                         </div>
                         <a href="{{ route('trips.stops.create', [$trip, 'booking' => $booking->id]) }}" class="shrink-0 py-1 font-medium text-slate-700 hover:underline">{{ $booking->category === 'flight' ? 'Teilstrecke hinzufügen' : 'Tag zuweisen' }}</a>
                     </li>

@@ -95,6 +95,11 @@ class Booking extends Model
         return $this->hasMany(ItineraryStop::class);
     }
 
+    public function flightExtractions(): HasMany
+    {
+        return $this->hasMany(BookingFlightExtraction::class);
+    }
+
     public function getCategoryLabelAttribute(): string
     {
         return self::CATEGORY_LABELS[$this->category] ?? $this->category;

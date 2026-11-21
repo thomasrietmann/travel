@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Booking;
 use App\Models\ImportedMail;
 use App\Models\Trip;
 use App\Models\User;
+use App\Services\BookingFlightImporter;
 use App\Services\DocumentStorage;
 use App\Services\ImapMailbox;
 use App\Services\IncomingMailImporter;
@@ -15,6 +17,7 @@ use App\Services\ProcessLock;
 use App\Services\TrustedMailSender;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Mockery\MockInterface;
@@ -119,6 +122,24 @@ class MailImportSafetyTest extends TestCase
         $path = $this->trip->documents()->first()->file_path;
         $this->assertSame($this->mailbox->contents, \Storage::disk('local')->get($path));
         \Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_mail_import_saves_flight_segments_in_its_first_extraction(): void
+    {
+        $this->extractor()->shouldReceive('extract')->once()->andReturn([
+            'trip_id' => $this->trip->id, 'title' => 'Swiss Hinflug', 'category' => 'flight',
+            'flight_segments' => [[
+                'title' => 'LX 18', 'start_date' => '2027-06-06', 'start_time' => '09:40',
+                'end_date' => '2027-06-06', 'end_time' => '12:10', 'start_location' => 'ZRH', 'end_location' => 'EWR',
+                'start_timezone' => 'Europe/Zurich', 'end_timezone' => 'America/New_York',
+            ]],
+        ]);
+        $this->assertSame(1, app(IncomingMailImporter::class)->import()['imported']);
+        $booking = Booking::query()->sole();
+        $this->assertSame(1, $booking->stops()->count());
+        $this->assertSame('completed', $booking->flightExtractions()->sole()->status);
+        $this->assertSame(1, app(BookingFlightImporter::class)->extract($booking)['cached']);
+        Http::assertNothingSent();
     }
 
     public function test_seen_failure_never_repeats_a_committed_booking(): void

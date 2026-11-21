@@ -13,7 +13,7 @@ class BookingAiExtractor
 {
     use UsesOpenAi;
 
-    public function extract(Trip $trip, UploadedFile $file): array
+    public function extract(Trip $trip, UploadedFile $file, ?Booking $booking = null): array
     {
         if (! config('ai.openai.api_key')) {
             throw new RuntimeException('OPENAI_API_KEY ist nicht gesetzt.');
@@ -25,7 +25,7 @@ class BookingAiExtractor
 
         try {
             $content = [
-                ['type' => 'input_text', 'text' => $this->prompt($trip)],
+                ['type' => 'input_text', 'text' => $this->prompt($trip, $booking)],
             ];
 
             if (Str::startsWith((string) $file->getMimeType(), 'image/')) {
@@ -100,7 +100,7 @@ class BookingAiExtractor
         return $response->json('id');
     }
 
-    private function prompt(Trip $trip): string
+    private function prompt(Trip $trip, ?Booking $booking): string
     {
         return implode("\n", [
             'Extrahiere aus dem Dokument oder Screenshot eine Reisebuchung fuer TripControl.',
@@ -111,6 +111,10 @@ class BookingAiExtractor
             'Kategorie muss eine der erlaubten TripControl-Kategorien sein.',
             'Waehrung muss CHF, EUR, USD, SEK oder NOK sein. Wenn nicht erkennbar, CHF verwenden.',
             'payment_status nur auf paid setzen, wenn bezahlt oder Zahlung erledigt klar erkennbar ist.',
+            BookingFlightImporter::prompt(),
+            'Bestehende Buchung, falls angegeben. flight_segments nur fuer diese Buchung liefern:',
+            'Buchung: '.($booking?->title ?? ''),
+            'Buchungsreferenz: '.($booking?->booking_reference ?? ''),
             'Reise-Kontext:',
             'Titel: '.$trip->title,
             'Destination: '.($trip->destination ?: ''),
@@ -140,6 +144,7 @@ class BookingAiExtractor
                 'notes' => ['type' => 'string'],
                 'document_title' => ['type' => 'string'],
                 'document_type' => ['type' => 'string', 'enum' => Document::TYPES],
+                'flight_segments' => BookingFlightImporter::schema(),
             ],
             'required' => [
                 'category',
@@ -157,6 +162,7 @@ class BookingAiExtractor
                 'notes',
                 'document_title',
                 'document_type',
+                'flight_segments',
             ],
         ];
     }

@@ -18,13 +18,15 @@ class StagingInventory
             throw new RuntimeException('APP_KEY fehlt.');
         }
         $tables = self::TABLES;
-        if (Schema::hasTable('itinerary_stops')) {
-            $tables[] = 'itinerary_stops';
-        }
-        if ($baseline !== null && array_keys($baseline['tables'] ?? []) === self::TABLES
-            && $tables !== self::TABLES && ! DB::table('itinerary_stops')->exists()) {
-            // A pre-itinerary inventory still matches directly after the additive migration.
-            $tables = self::TABLES;
+        foreach (['itinerary_stops', 'booking_flight_extractions'] as $table) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+            if ($baseline !== null && ! array_key_exists($table, $baseline['tables'] ?? []) && ! DB::table($table)->exists()) {
+                // An older inventory remains comparable while an additive table is empty.
+                continue;
+            }
+            $tables[] = $table;
         }
         if ($baseline !== null && (($baseline['format'] ?? null) !== 1
             || array_keys($baseline['tables'] ?? []) !== $tables)) {

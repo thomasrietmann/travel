@@ -97,7 +97,7 @@ Im Restore-Projekt:
 "$TC_PHP" artisan staging:inventory "$TC_EVIDENCE/before.json" --verify
 "$TC_PHP" artisan migrate:status
 "$TC_PHP" artisan migrate --pretend
-# Nur die beiden geplanten neuen Migrationen dürfen anstehen.
+# Nur die in ReleaseUpgrade::MIGRATIONS aufgeführten Release-Migrationen dürfen anstehen.
 "$TC_PHP" artisan migrate --force
 "$TC_PHP" artisan migrate --force      # muss beim zweiten Lauf nichts ändern
 "$TC_PHP" artisan staging:inventory "$TC_EVIDENCE/before.json" --verify

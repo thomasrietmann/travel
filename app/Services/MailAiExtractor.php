@@ -142,6 +142,7 @@ class MailAiExtractor
             'Datumswerte immer als YYYY-MM-DD. Wenn nur ein Datum erkennbar ist, nutze es als Start- und Enddatum.',
             'Waehrung muss CHF, EUR, USD, SEK oder NOK sein. Wenn nicht erkennbar, CHF verwenden.',
             'payment_status nur auf paid setzen, wenn bezahlt oder Zahlung erledigt klar erkennbar ist.',
+            BookingFlightImporter::prompt(),
             'Empfangsadresse: '.config('mail_import.recipient'),
             'Bestehende Reisen:',
             $trips ?: 'Keine bestehenden Reisen vorhanden.',
@@ -181,6 +182,7 @@ class MailAiExtractor
                 'notes' => ['type' => 'string'],
                 'document_title' => ['type' => 'string'],
                 'document_type' => ['type' => 'string', 'enum' => Document::TYPES],
+                'flight_segments' => BookingFlightImporter::schema(),
             ],
             'required' => [
                 'trip_id',
@@ -207,6 +209,7 @@ class MailAiExtractor
                 'notes',
                 'document_title',
                 'document_type',
+                'flight_segments',
             ],
         ];
     }

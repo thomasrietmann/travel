@@ -7,6 +7,7 @@ use App\Models\Document;
 use App\Models\Trip;
 use App\Services\BookingAiExtractor;
 use App\Services\BookingData;
+use App\Services\BookingFlightImporter;
 use App\Services\DocumentStorage;
 use App\Services\TripSummaryGenerator;
 use Illuminate\Http\RedirectResponse;
@@ -46,6 +47,7 @@ class BookingImportController extends Controller
                         'document_type' => in_array($extracted['document_type'] ?? '', Document::TYPES, true) ? $extracted['document_type'] : 'confirmation',
                         'notes' => 'Automatisch aus Buchungsimport erstellt.',
                     ]);
+                    app(BookingFlightImporter::class)->remember($booking, $extracted);
                 });
 
                 $created++;

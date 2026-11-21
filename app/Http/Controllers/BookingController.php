@@ -47,7 +47,7 @@ class BookingController extends Controller
 
         return view('bookings.edit', [
             'trip' => $booking->trip,
-            'booking' => $booking->load(['documents', 'stops' => fn ($query) => $query->orderBy('start_date')->orderBy('start_time')]),
+            'booking' => $booking->load(['documents', 'flightExtractions', 'stops' => fn ($query) => $query->orderBy('start_date')->orderBy('start_time')]),
         ]);
     }
 

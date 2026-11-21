@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\MailImportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\BookingFlightImportController;
 use App\Http\Controllers\BookingImportController;
 use App\Http\Controllers\CountdownController;
 use App\Http\Controllers\DashboardController;
@@ -52,6 +53,7 @@ Route::middleware(['auth', 'not_admin', 'throttle:writes'])->group(function () {
     Route::post('/trips/{trip}/shares', [TripShareController::class, 'store'])->name('trips.shares.store');
     Route::delete('/trips/{trip}/shares/{user}', [TripShareController::class, 'destroy'])->name('trips.shares.destroy');
     Route::post('/trips/{trip}/bookings/import', [BookingImportController::class, 'store'])->middleware('throttle:ai-import')->name('trips.bookings.import');
+    Route::post('/bookings/{booking}/flight-import', BookingFlightImportController::class)->middleware('throttle:ai-import')->name('bookings.flights.import');
     Route::resource('trips.bookings', BookingController::class)->shallow()->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::resource('trips.tasks', TaskController::class)->shallow()->only(['create', 'store', 'edit', 'update', 'destroy']);
     Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');

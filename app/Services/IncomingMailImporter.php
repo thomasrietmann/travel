@@ -145,6 +145,9 @@ class IncomingMailImporter
                 if (! $this->hasPdfAttachment($mail['attachments'])) {
                     $this->storeMailPdfDocument($trip, $booking, $subject, $mail);
                 }
+                if ($booking) {
+                    app(BookingFlightImporter::class)->remember($booking, $data);
+                }
                 $record->update(['trip_id' => $trip->id, 'status' => 'imported', 'notes' => null, 'processed_at' => now()]);
 
                 return $trip;

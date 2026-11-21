@@ -6,6 +6,14 @@
         <h1 class="mt-3 text-3xl font-semibold tracking-tight">Buchung bearbeiten</h1>
     </div>
 
+    @if ($booking->category === 'flight')
+        <section id="flugstrecken" class="mb-6 rounded-lg border border-slate-200 bg-white p-5">
+            <h2 class="mb-3 text-base font-semibold text-slate-950">Flugstrecken im Tagesplan</h2>
+            @include('itinerary.flight-import')
+            <a href="{{ route('trips.stops.create', [$trip, 'booking' => $booking->id]) }}" class="mt-3 inline-block text-sm font-medium text-slate-700 underline">Teilstrecke manuell hinzufügen</a>
+        </section>
+    @endif
+
     <form method="POST" action="{{ route('bookings.update', $booking) }}" enctype="multipart/form-data" class="space-y-6">
         @csrf
         @method('PUT')

@@ -14,6 +14,7 @@ class ReleaseUpgrade
         '2026_10_24_000002_add_email_identity_security',
         '2026_11_21_000001_add_deposit_amount_to_bookings_table',
         '2026_11_21_000002_create_itinerary_stops_table',
+        '2026_11_21_000003_create_booking_flight_extractions_table',
     ];
 
     /** Refuse a fresh install, unexpected migrations, or a partially applied MySQL DDL change. */
@@ -40,7 +41,8 @@ class ReleaseUpgrade
         if ($first !== in_array(self::MIGRATIONS[0], $ran, true)
             || $second !== array_fill(0, 3, in_array(self::MIGRATIONS[1], $ran, true))
             || Schema::hasColumn('bookings', 'deposit_amount') !== in_array(self::MIGRATIONS[2], $ran, true)
-            || Schema::hasTable('itinerary_stops') !== in_array(self::MIGRATIONS[3], $ran, true)) {
+            || Schema::hasTable('itinerary_stops') !== in_array(self::MIGRATIONS[3], $ran, true)
+            || Schema::hasTable('booking_flight_extractions') !== in_array(self::MIGRATIONS[4], $ran, true)) {
             throw new DomainException('Partielle oder fremde Schemaänderung erkannt. Nicht blind wiederholen; Schema und migrations-Tabelle prüfen.');
         }
         if ($second[0] && ! DB::table('email_identity_lock')->where('id', 1)->exists()) {

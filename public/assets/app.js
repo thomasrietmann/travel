@@ -122,3 +122,12 @@ document.querySelectorAll('form[data-confirm]').forEach((form) => {
         if (!window.confirm(form.dataset.confirm)) event.preventDefault();
     });
 });
+
+document.querySelectorAll('[data-flight-import-form]').forEach((form) => {
+    form.addEventListener('submit', () => {
+        const button = form.querySelector('button');
+        button.disabled = true;
+        button.textContent = 'Flugstrecken werden gelesen …';
+        form.setAttribute('aria-busy', 'true');
+    });
+});

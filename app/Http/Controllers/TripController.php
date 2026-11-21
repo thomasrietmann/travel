@@ -40,6 +40,7 @@ class TripController extends Controller
                 ->orderByRaw("case category when 'flight' then 0 when 'car' then 1 when 'hotel' then 2 else 3 end")
                 ->orderBy('title'),
             'bookings.documents',
+            'bookings.flightExtractions',
             'stops',
             'tasks',
             'documents.booking',
