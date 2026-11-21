@@ -93,15 +93,15 @@ Der Vergleich ist auf Geschäftsdaten und referenzierte Dokumente begrenzt. Sess
 
 ## 4. Nachkontrolle und getrennte Freigabe
 
-Nach erfolgreichem Skriptlauf im richtigen Web-/CLI-Chroot:
+Nach erfolgreichem Skriptlauf den [bestätigten Metanet-Cache-Ablauf](DEPLOY_METANET.md#6-webfreigabe-und-smoke-test) verwenden. Unterschiedliche absolute SSH- und Webpfade können bei vorab erzeugten Konfigurations- und View-Caches zu HTTP 500 führen.
 
 ```bash
+"$TC_PHP" artisan config:clear
+"$TC_PHP" artisan view:clear
+"$TC_PHP" artisan route:clear
 "$TC_PHP" artisan deployment:check --probe-storage
 # Bei freigegebenem Mailimport zusätzlich:
 "$TC_PHP" artisan deployment:check --mail
-"$TC_PHP" artisan config:cache
-"$TC_PHP" artisan route:cache
-"$TC_PHP" artisan view:cache
 ```
 
 Staging verwendet an dieser Stelle jeweils `deployment:check --staging`. Alle Exitcodes prüfen. OPcache/PHP-FPM gegebenenfalls über Plesk neu laden. Danach die HTTP-Smoke-Tests aus der Deployment-Anleitung durchführen: bestehende Logins, Freigaben, hashgleiche Altdownloads, direkte URL-Sperren, eigenes Testdokument, Formulare, Countdown und Mailversand. Der CLI-Erfolg allein öffnet die Anwendung nicht.

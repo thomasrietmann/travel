@@ -83,4 +83,4 @@ Die Dokumentmigration inventarisiert standardmässig; `--apply` kopiert nach Pr�
 
 ## Währungskurse
 
-Die festen CHF-Umrechnungskurse liegen in `config/exchange.php`. Servereigene Anpassungen bleiben in der nicht versionierten Datei `config/exchange.local.php`; bei einer neuen lokalen Installation kann `config/exchange.local.example.php` als Vorlage dienen. `EUR => 0.9150` bedeutet `1 EUR = 0.9150 CHF`. Nach Änderungen gezielt `php artisan config:cache` im korrekten Ausführungskontext ausführen.
+Die festen CHF-Umrechnungskurse liegen in `config/exchange.php`. Servereigene Anpassungen bleiben in der nicht versionierten Datei `config/exchange.local.php`; bei einer neuen lokalen Installation kann `config/exchange.local.example.php` als Vorlage dienen. `EUR => 0.9150` bedeutet `1 EUR = 0.9150 CHF`. Nach Änderungen auf Metanet gezielt `php artisan config:clear` mit dem PHP der Installation ausführen. Der [Metanet-Cache-Ablauf](DEPLOY_METANET.md#6-webfreigabe-und-smoke-test) berücksichtigt die unterschiedlichen SSH- und Webpfade.

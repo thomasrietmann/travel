@@ -182,18 +182,20 @@ Mit einer **bekannten tatsächlich vorhandenen** alten Datei testen: anonyme dir
 
 ## 6. Webfreigabe und Smoke-Test
 
+Für die bestehende Metanet-Installation den am **21.11.2026 vom Betreiber bestätigten Ablauf** mit gezieltem Leeren der Caches verwenden. SSH sieht das Projekt unter `/home/httpd/vhosts/aufbollen.ch/travel.git`, die Webausführung im Chroot unter `/travel.git`. Konfigurations- und View-Caches können absolute SSH-Pfade enthalten, die im Web zu HTTP 500 führen. Nach `config:clear`, `view:clear` und `route:clear` bestätigte der Betreiber die Wiederherstellung der Anwendung.
+
 ```bash
+"$TC_PHP" artisan config:clear
+"$TC_PHP" artisan view:clear
+"$TC_PHP" artisan route:clear
 "$TC_PHP" artisan deployment:check --probe-storage
-"$TC_PHP" artisan config:cache
-"$TC_PHP" artisan route:cache
-"$TC_PHP" artisan view:cache
 ```
 
-Bei Chroot-Abweichungen Cache-Dateien in der für die Webausführung korrekten Umgebung erzeugen; insbesondere kompilierte View- und absolute Storage-Pfade prüfen. `optimize:clear` ist kein pauschaler Deploy-Schritt: ein globales Cache-Leeren setzt auch Limits zurück. Nach dem Wechsel OPcache/PHP-FPM über den vorgesehenen Plesk-Weg neu laden, falls erforderlich.
+Nach Änderungen an `.env` oder Konfigurationsdateien ebenfalls gezielt `config:clear` mit dem PHP der Installation ausführen. Cache-Optimierungen mit `config:cache`, `view:cache`, `route:cache` oder `optimize` setzen eine für CLI und Web geprüfte Pfadzuordnung und einen erfolgreichen Webtest voraus. Das gezielte Leeren erhält die im Anwendungscache gespeicherten Limits. Nach dem Wechsel OPcache/PHP-FPM über den vorgesehenen Plesk-Weg neu laden, falls erforderlich.
 
 Vor Öffnung über einen zeitlich begrenzten Wartungs-Bypass oder eine abgeschirmte Staging-Domain testen. Bypass-Token wie ein Passwort behandeln und anschliessend entfernen.
 
-1. Bestehendes normales Konto und Administratorkonto anmelden, vorhandene Reisen, Buchungen, Aufgaben, Geburtstage und Freigaben vergleichen.
+1. Login-Seite und `/up` aufrufen. Bestehendes normales Konto und Administratorkonto anmelden, vorhandene Reisen, Buchungen, Aufgaben, Geburtstage und Freigaben vergleichen.
 2. Alte private sowie alte öffentliche/Fallback-Dokumente über die Anwendung herunterladen und Hash vergleichen; fremdes Konto erhält 403.
 3. Als Mitbenutzer erlaubte Bearbeitung testen; Löschen der Reise und Freigabeverwaltung bleiben dem Eigentümer vorbehalten.
 4. Ein ausdrücklich angelegtes Testdokument hochladen, ersetzen, herunterladen und löschen. Originalbestand nicht als Testobjekt verwenden.
@@ -218,9 +220,9 @@ Der bisherige Import vertraute auch `Reply-To`/`Sender`. Jetzt ist nur eine einz
 
 1. Exakte authserv-id und tatsächlich gesetztes Headerformat aus dem Empfangspostfach feststellen. Die momentane konservative Prüfung erwartet z. B. `Authentication-Results: mx.example.test; dmarc=pass header.from=example.com`; andere Prüfmethoden dürfen in getrennten Semikolon-Abschnitten stehen. Kommentare/abweichende DMARC-Formate werden zurückgewiesen und benötigen eine gezielte, getestete Parseranpassung.
 2. Echte positive und manipulierte negative Beispielmails verwenden. Die Beispiele ausserhalb des Webroots aufbewahren und danach entfernen. Keine Kundenmails ins Repository kopieren.
-3. Erst in der Testkonfiguration `MAIL_IMPORT_AUTHSERV_IDS=EXAKTE-ID` und `MAIL_IMPORT_AUTH_RESULTS_TRUSTED=true` setzen, Cache aktualisieren und `php artisan mail:check-sender /privater/pfad/beispiel.eml` ausführen. Eine manipulierte Nachricht mit gefälschtem Header muss abgelehnt werden. Der lokale Dateitest ersetzt den Test der vorgeschalteten Mailserverbereinigung nicht.
+3. Erst in der Testkonfiguration `MAIL_IMPORT_AUTHSERV_IDS=EXAKTE-ID` und `MAIL_IMPORT_AUTH_RESULTS_TRUSTED=true` setzen, `config:clear` und `php artisan mail:check-sender /privater/pfad/beispiel.eml` mit dem PHP der Installation ausführen. Eine manipulierte Nachricht mit gefälschtem Header muss abgelehnt werden. Der lokale Dateitest ersetzt den Test der vorgeschalteten Mailserverbereinigung nicht.
 4. IMAP nur mit `/ssl`, ohne `/novalidate-cert`; Empfänger und Zugangsdaten beibehalten. Eigene weitergeleitete Testmail eines bestätigten Benutzers importieren, Eigentümer, Reisezuordnung und Dokument prüfen. Erneut importieren: keine Duplikate.
-5. Erst nach bestandenem Test die Flags produktiv setzen und `deployment:check --mail` ausführen. Dann Plesk-Cron wieder aktivieren, zunächst mit `PHP83 /absoluter/projektpfad/cron-mail-import.php --limit=1`.
+5. Erst nach bestandenem Test die Flags produktiv setzen und `config:clear` sowie `deployment:check --mail` mit dem PHP der Installation ausführen. Dann Plesk-Cron wieder aktivieren, zunächst mit `PHP83 /absoluter/projektpfad/cron-mail-import.php --limit=1`.
 
 Ohne belegte Header-Vertrauensgrenze bleibt der Mailimport gesperrt. Die Webanwendung und vorhandene Daten sind davon unabhängig. Ungelesene Nachrichten werden weder gelöscht noch bei Verarbeitungsfehlern als gelesen markiert. Ist ein unterbrechungsfreier Mailimport für das Wartungsfenster zwingend, erfolgt die gesamte Freigabe erst nach diesem Test.
 
@@ -238,7 +240,7 @@ Bei fehlgeschlagenen Checks bleibt Wartung aktiv, Cron pausiert und Bereinigung 
 - Falls nach Freigabe bereits Benutzer geschrieben haben: keinen alten SQL-Dump über die aktuelle Datenbank importieren. Zuerst aktuellen Zustand zusätzlich sichern; neue Daten/Dokumente in einer separaten Umgebung abgleichen und kontrollierte Vorwärtskorrektur bevorzugen.
 - Ein vollständiger Restore von SQL **und dazugehörigem Dokumentstand** ist nur nach bewusster Entscheidung über den Verlust aller späteren Änderungen zulässig. Zuerst in einer separaten Datenbank und separaten Ordnern wiederherstellen, dort prüfen, danach koordiniert umschalten. Keine Datenbank allein auf einen älteren Stand setzen.
 
-Nach jeder Rückkehr Caches zum tatsächlich aktiven Code neu erzeugen, OPcache prüfen und dieselben Smoke-Tests durchführen. Erst dann Wartung beenden. Backups bis nach fachlicher Abnahme aufbewahren.
+Nach jeder Rückkehr Konfigurations-, View- und Route-Caches nach Abschnitt 6 gezielt leeren, OPcache prüfen und dieselben Smoke-Tests durchführen. Erst dann Wartung beenden. Backups bis nach fachlicher Abnahme aufbewahren.
 
 ## Betrieb und Quellen
 

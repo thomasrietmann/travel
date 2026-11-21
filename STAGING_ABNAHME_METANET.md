@@ -110,11 +110,13 @@ Für eine Wiederholung eine weitere **neue leere** Restore-DB verwenden. Keine R
 
 ## D. Web-/CLI-Abnahme auf travel-at.aufbollen.ch
 
+Den [bestätigten Metanet-Cache-Ablauf](DEPLOY_METANET.md#6-webfreigabe-und-smoke-test) auch für Staging verwenden. Die gezielt geleerten Caches lassen die Anwendung Pfade im jeweiligen SSH- oder Webkontext auflösen.
+
 ```bash
+"$TC_PHP" artisan config:clear
+"$TC_PHP" artisan view:clear
+"$TC_PHP" artisan route:clear
 "$TC_PHP" artisan deployment:check --staging --probe-storage
-"$TC_PHP" artisan config:cache
-"$TC_PHP" artisan route:cache
-"$TC_PHP" artisan view:cache
 ```
 
 - CLI-Dateiprobe plus Upload eines ausdrücklich neuen Testdokuments im Web: über CLI und Web dieselben SHA-256/Bytes nachweisen. Nicht nur Pfadzeichenketten vergleichen. Chroot-Sicht und Prozesssperrverzeichnis müssen dieselbe Ablage erreichen.
@@ -128,7 +130,7 @@ Für eine Wiederholung eine weitere **neue leere** Restore-DB verwenden. Keine R
 
 In Plesk die tatsächlichen TLS-Hostnamen für `travel.at@aufbollen.ch` feststellen, statt die Staging-Webdomain als Mailhost zu raten. Metanet dokumentiert SMTPS auf 465, STARTTLS auf 587 und IMAPS auf 993; Zertifikatsname und Host müssen passen ([Mail-TLS-Dokumentation](https://www.metanet.ch/de/support/webhosting-e-mail/mail/sicherer-e-mailverkehr-ssl)). Die Anwendung erzwingt jetzt auch bei STARTTLS eine verschlüsselte Verbindung vor Authentifizierung.
 
-1. SMTP-/IMAP-Zugangsdaten ausschliesslich in der Staging-`.env` eintragen, SMTP-Host/Scheme/Port laut Plesk; IMAP exakt `{TLS-HOST:993/imap/ssl}INBOX`. Keine Zertifikatsausnahmen. Vor dem Check `config:clear` ausführen, danach Cache neu erzeugen. `MAIL_MAILER=array`, Import und AI zunächst aus lassen. Explizite SMTP-Prüfung verwendet trotzdem den benannten SMTP-Transport.
+1. SMTP-/IMAP-Zugangsdaten ausschliesslich in der Staging-`.env` eintragen, SMTP-Host/Scheme/Port laut Plesk; IMAP exakt `{TLS-HOST:993/imap/ssl}INBOX`. Keine Zertifikatsausnahmen. Nach Konfigurationsänderungen `config:clear` mit dem PHP der Installation ausführen. `MAIL_MAILER=array`, Import und AI zunächst aus lassen. Explizite SMTP-Prüfung verwendet trotzdem den benannten SMTP-Transport.
 2. Nur Verbindungsprüfung, kein Mailversand/Import:
 
    ```bash
@@ -143,7 +145,7 @@ In Plesk die tatsächlichen TLS-Hostnamen für `travel.at@aufbollen.ch` feststel
    ```
 
    `STAGING_MAIL_RECIPIENT=travel.at@aufbollen.ch` ist die einzige erlaubte Zieladresse. Das gilt in `APP_ENV=staging` auch für normale Anwendungsmails inklusive CC/BCC; fehlende oder andere Adressen werden blockiert. SMTP-Annahme und tatsächlichen Eingang getrennt protokollieren. Referenz-ID, Empfangszeit und Header im privaten Protokoll erfassen, keine Inhalte ins Repository kopieren.
-4. Für Adressbestätigung vorübergehend `MAIL_MAILER=smtp` setzen, Cache neu erzeugen. Ausschliesslich ein eigenes Staging-Konto mit `travel.at@aufbollen.ch` verwenden. Neuen Bestätigungslink anfordern, Anmeldung mit richtigem Konto, falschem Konto und abgelaufener Signatur prüfen. Link muss auf `https://travel-at.aufbollen.ch` zeigen. Keine kopierten Kundennutzer oder Aliase umschreiben. Nach dem Test normale Mail wieder auf `array` setzen.
+4. Für Adressbestätigung vorübergehend `MAIL_MAILER=smtp` setzen und `config:clear` mit dem PHP der Installation ausführen. Ausschliesslich ein eigenes Staging-Konto mit `travel.at@aufbollen.ch` verwenden. Neuen Bestätigungslink anfordern, Anmeldung mit richtigem Konto, falschem Konto und abgelaufener Signatur prüfen. Link muss auf `https://travel-at.aufbollen.ch` zeigen. Keine kopierten Kundennutzer oder Aliase umschreiben. Nach dem Test normale Mail wieder auf `array` setzen und `config:clear` ausführen.
 5. Eine kontrollierte Mail von einem **eigenen externen Testkonto** an `travel.at@aufbollen.ch` senden, damit auch der externe Empfangsweg geprüft wird. Ein interner SMTP-Rundlauf allein prüft diesen Weg nicht. Empfang und ungelesenen Zustand über Webmail kontrollieren. EML nur privat ausserhalb Webroot aufbewahren.
 
 ## F. Headervertrauen und Ende-zu-Ende-Import
@@ -171,7 +173,7 @@ Nach diesem Nachweis nur im Staging die exakte authserv-id und `MAIL_IMPORT_AUTH
 Für den vollständigen Import zusätzlich Besitz der eigenen From-Adresse in Staging per SMTP bestätigen. Bei einer zweiten eigenen externen Adresse das erlaubte Mailziel kurzzeitig ausdrücklich auf genau diese Adresse umstellen, bestätigen und danach wieder `travel.at@aufbollen.ch` setzen. Keine Kundendaten oder kopierten Dokumente an AI schicken: eine minimale synthetische Buchungsmail und ausdrücklich angelegte Testreise verwenden. Eigenen begrenzten AI-Schlüssel erst für diesen Schritt einsetzen, `AI_DAILY_LIMIT` passend zu den geplanten Versuchen begrenzen. Diesen echten API-Aufruf separat dokumentieren.
 
 ```bash
-# Nur nach bestandenem Header-/Adressbesitztest: MAIL_IMPORT_ENABLED=true, Cache aktualisieren.
+# Nach bestandenem Header-/Adressbesitztest MAIL_IMPORT_ENABLED=true setzen und config:clear ausführen.
 "$TC_PHP" artisan deployment:check --staging --mail
 "$TC_PHP" artisan mail:import --limit=1
 ```
