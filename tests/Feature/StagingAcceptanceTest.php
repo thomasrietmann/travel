@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\Trip;
 use App\Services\StagingInventory;
 use App\Services\StagingMailProbe;
+use App\Services\ReleaseUpgrade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
@@ -39,7 +40,7 @@ class StagingAcceptanceTest extends TestCase
 
     public function test_inventory_preserves_old_columns_across_upgrade_and_checks_document_bytes(): void
     {
-        $this->artisan('migrate:rollback', ['--step' => 2, '--force' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => count(ReleaseUpgrade::MIGRATIONS), '--force' => true])->assertSuccessful();
         $trip = Trip::factory()->create();
         $trip->user->emailAliases()->create(['email' => 'legacy@example.test']);
         $document = Document::factory()->for($trip)->create();

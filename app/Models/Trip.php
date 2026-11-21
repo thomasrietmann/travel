@@ -114,14 +114,12 @@ class Trip extends Model
 
     public function getPaidAmountAttribute(): float
     {
-        return (float) $this->bookings
-            ->where('payment_status', 'paid')
-            ->sum('amount');
+        return round($this->total_amount - $this->open_amount, 2);
     }
 
     public function getOpenAmountAttribute(): float
     {
-        return max(0, $this->total_amount - $this->paid_amount);
+        return round($this->bookings->sum('open_amount'), 2);
     }
 
     public function getTotalAmountChfAttribute(): float
@@ -131,16 +129,12 @@ class Trip extends Model
 
     public function getPaidAmountChfAttribute(): float
     {
-        return round($this->bookings
-            ->where('payment_status', 'paid')
-            ->sum('amount_chf'), 2);
+        return round($this->total_amount_chf - $this->open_amount_chf, 2);
     }
 
     public function getOpenAmountChfAttribute(): float
     {
-        return round($this->bookings
-            ->whereIn('payment_status', ['unpaid', 'partially_paid'])
-            ->sum('amount_chf'), 2);
+        return round($this->bookings->sum('open_amount_chf'), 2);
     }
 
     public function getBookingCompletionPercentageAttribute(): int

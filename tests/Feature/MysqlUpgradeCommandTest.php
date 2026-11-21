@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\Trip;
 use App\Services\ProcessLock;
 use App\Services\StagingInventory;
+use App\Services\ReleaseUpgrade;
 use Illuminate\Contracts\Foundation\MaintenanceMode;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +28,7 @@ class MysqlUpgradeCommandTest extends TestCase
         if (DB::connection()->getDriverName() !== 'mysql') {
             $this->markTestSkipped('Production upgrade command requires the MySQL test job.');
         }
-        $this->artisan('migrate:rollback', ['--step' => 2, '--force' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => count(ReleaseUpgrade::MIGRATIONS), '--force' => true])->assertSuccessful();
         $this->app->instance('env', 'staging');
         config(['app.debug' => false]);
         $maintenance = Mockery::mock(MaintenanceMode::class);

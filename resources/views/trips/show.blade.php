@@ -137,7 +137,13 @@
                             <td class="px-5 py-4">{{ $booking->booking_status_label }}</td>
                             <td class="px-5 py-4">{{ $booking->booking_reference ?: '-' }}</td>
                             <td class="px-5 py-4">{{ $booking->date_range_label }}</td>
-                            <td class="px-5 py-4">{{ $booking->payment_status_label }}</td>
+                            <td class="px-5 py-4">
+                                {{ $booking->payment_status_label }}
+                                @if ($booking->payment_status === 'partially_paid' && $booking->deposit_amount !== null)
+                                    <div class="text-xs text-slate-500">Anzahlung {{ number_format((float) $booking->deposit_amount, 2) }} {{ $booking->currency }}</div>
+                                    <div class="text-xs text-slate-500">Offen {{ number_format($booking->open_amount, 2) }} {{ $booking->currency }}</div>
+                                @endif
+                            </td>
                             <td class="px-5 py-4">
                                 <div>{{ number_format((float) $booking->amount, 2) }} {{ $booking->currency }}</div>
                                 @if ($booking->currency !== 'CHF')

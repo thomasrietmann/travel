@@ -14,14 +14,14 @@ use Throwable;
 class UpgradeRelease extends Command
 {
     protected $signature = 'deployment:upgrade
-        {--apply : Die zwei neuen Migrationen tatsächlich ausführen}
+        {--apply : Die ausstehenden Release-Migrationen ausführen}
         {--expect-database= : Exakt erwarteter Datenbankname, bei --apply erforderlich}
         {--evidence-dir= : Privater vorhandener Ordner (0700) für das dauerhafte Ausgangsinventar}
         {--backup-confirmed : Aktuelles konsistentes Backup vorhanden und Restore geprüft}
         {--writers-stopped : Cron, Queue und andere Schreibprozesse gestoppt und ausgelaufen}
         {--copy-documents : Nach der Migration alte Dokumente geprüft privat kopieren; Quellen erhalten}';
 
-    protected $description = 'Kontrolliertes Bestandsupgrade für den Sicherheitsrelease 2026-10-24; standardmässig nur prüfen';
+    protected $description = 'Kontrolliertes Bestandsupgrade für TripControl; standardmässig nur prüfen';
 
     public function handle(ReleaseUpgrade $upgrade, StagingInventory $inventory, ProcessLock $lock): int
     {

@@ -1,6 +1,8 @@
 @php
     use App\Models\Booking;
     use App\Models\Document;
+
+    $partiallyPaid = old('payment_status', $booking->payment_status) === 'partially_paid';
 @endphp
 
 <div class="space-y-6">
@@ -100,6 +102,12 @@
                     @endforeach
                 </select>
                 @error('currency') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
+            </div>
+
+            <div id="deposit-field" @if (! $partiallyPaid) hidden @endif>
+                <label for="deposit_amount" class="block text-sm font-medium text-slate-700">Anzahlung in Buchungswährung</label>
+                <input id="deposit_amount" name="deposit_amount" type="number" step="0.01" min="0.01" value="{{ old('deposit_amount', $booking->deposit_amount) }}" @disabled(! $partiallyPaid) class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                @error('deposit_amount') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
         </div>
     </section>

@@ -7,6 +7,7 @@ use App\Models\Document;
 use App\Models\Task;
 use App\Models\Trip;
 use App\Models\User;
+use App\Services\ReleaseUpgrade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,8 +17,7 @@ class UpgradeCompatibilityTest extends TestCase
 {
     public function test_additive_upgrade_preserves_existing_rows_passwords_tokens_and_files(): void
     {
-        // Only the two NEW migrations are removed in this isolated test database.
-        $this->artisan('migrate:rollback', ['--step' => 2, '--force' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => count(ReleaseUpgrade::MIGRATIONS), '--force' => true])->assertSuccessful();
         $owner = User::factory()->create(['countdown_share_token' => str_repeat('a', 48)]);
         $shared = User::factory()->create();
         $owner->emailAliases()->create(['email' => 'legacy-alias@example.com']);
@@ -29,14 +29,18 @@ class UpgradeCompatibilityTest extends TestCase
         Storage::disk('public')->put($document->file_path, 'existing file bytes');
         $tables = ['users', 'trips', 'trip_user', 'bookings', 'tasks', 'documents'];
         $before = [];
+        $columns = [];
         foreach ($tables as $table) {
-            $before[$table] = DB::table($table)->get()->toJson();
+            $rows = DB::table($table)->get();
+            $columns[$table] = array_keys((array) $rows->first());
+            $before[$table] = $rows->toJson();
         }
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
         foreach ($tables as $table) {
-            $this->assertSame($before[$table], DB::table($table)->get()->toJson(), $table);
+            $this->assertSame($before[$table], DB::table($table)->get($columns[$table])->toJson(), $table);
         }
+        $this->assertDatabaseHas('bookings', ['id' => $booking->id, 'deposit_amount' => null]);
         $this->assertDatabaseHas('user_email_aliases', ['email' => 'legacy-alias@example.com', 'user_id' => $owner->id, 'verified_at' => null]);
         $this->assertSame('existing file bytes', Storage::disk('public')->get($document->file_path));
         $this->actingAs($shared)->get(route('documents.download', $document))->assertDownload();

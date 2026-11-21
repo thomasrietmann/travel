@@ -105,6 +105,20 @@ document.querySelectorAll('[data-booking-import-form]').forEach((form) => {
             });
         });
 
+const paymentStatus = document.getElementById('payment_status');
+if (paymentStatus) {
+    const depositField = document.getElementById('deposit-field');
+    const depositInput = document.getElementById('deposit_amount');
+    const updateDepositField = () => {
+        const partiallyPaid = paymentStatus.value === 'partially_paid';
+        depositField.hidden = !partiallyPaid;
+        depositInput.disabled = !partiallyPaid;
+    };
+
+    paymentStatus.addEventListener('change', updateDepositField);
+    updateDepositField();
+}
+
 document.querySelectorAll('form[data-confirm]').forEach((form) => {
     form.addEventListener('submit', (event) => {
         if (!window.confirm(form.dataset.confirm)) event.preventDefault();

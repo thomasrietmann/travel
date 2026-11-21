@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Document;
 use App\Models\Trip;
 use App\Services\StagingInventory;
+use App\Services\ReleaseUpgrade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -31,7 +32,7 @@ class MysqlRestoreTest extends TestCase
         config(['database.connections.restore_test' => [...$source, 'database' => $target]]);
         $this->assertSame([], Schema::connection('restore_test')->getTableListing($target), 'Restore target must be empty.');
 
-        $this->artisan('migrate:rollback', ['--step' => 2, '--force' => true])->assertSuccessful();
+        $this->artisan('migrate:rollback', ['--step' => count(ReleaseUpgrade::MIGRATIONS), '--force' => true])->assertSuccessful();
         $trip = Trip::factory()->create(['title' => 'Restore Zürich']);
         $trip->user->emailAliases()->create(['email' => 'restore-alias@example.test']);
         $public = Document::factory()->for($trip)->create(['file_path' => 'documents/legacy.pdf']);

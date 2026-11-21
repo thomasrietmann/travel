@@ -57,6 +57,7 @@ class Booking extends Model
         'provider',
         'booking_reference',
         'amount',
+        'deposit_amount',
         'currency',
         'start_date',
         'end_date',
@@ -71,6 +72,7 @@ class Booking extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'deposit_amount' => 'decimal:2',
             'start_date' => 'date',
             'end_date' => 'date',
             'due_date' => 'date',
@@ -116,6 +118,20 @@ class Booking extends Model
     public function getAmountChfAttribute(): float
     {
         return round((float) $this->amount * $this->exchange_rate_to_chf, 2);
+    }
+
+    public function getOpenAmountAttribute(): float
+    {
+        return match ($this->payment_status) {
+            'paid' => 0.0,
+            'partially_paid' => round((float) $this->amount - (float) $this->deposit_amount, 2),
+            default => (float) $this->amount,
+        };
+    }
+
+    public function getOpenAmountChfAttribute(): float
+    {
+        return round($this->open_amount * $this->exchange_rate_to_chf, 2);
     }
 
     public function getDateRangeLabelAttribute(): string

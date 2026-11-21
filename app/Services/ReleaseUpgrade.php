@@ -12,6 +12,7 @@ class ReleaseUpgrade
     public const MIGRATIONS = [
         '2026_10_24_000001_create_document_file_deletions_table',
         '2026_10_24_000002_add_email_identity_security',
+        '2026_11_21_000001_add_deposit_amount_to_bookings_table',
     ];
 
     /** Refuse a fresh install, unexpected migrations, or a partially applied MySQL DDL change. */
@@ -36,7 +37,8 @@ class ReleaseUpgrade
             Schema::hasColumn('imported_mails', 'attempts'),
         ];
         if ($first !== in_array(self::MIGRATIONS[0], $ran, true)
-            || $second !== array_fill(0, 3, in_array(self::MIGRATIONS[1], $ran, true))) {
+            || $second !== array_fill(0, 3, in_array(self::MIGRATIONS[1], $ran, true))
+            || Schema::hasColumn('bookings', 'deposit_amount') !== in_array(self::MIGRATIONS[2], $ran, true)) {
             throw new DomainException('Partielle oder fremde Schemaänderung erkannt. Nicht blind wiederholen; Schema und migrations-Tabelle prüfen.');
         }
         if ($second[0] && ! DB::table('email_identity_lock')->where('id', 1)->exists()) {
