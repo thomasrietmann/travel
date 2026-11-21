@@ -2,6 +2,10 @@
 
 Arbeitszweig: `codex/security-refactor`, Ausgangsstand `d666874`. Die Änderungen sind für die bestehende Metanet-Anwendung mit PHP 8.3.36/MySQL vorbereitet. Es wurden keine produktiven Daten, Konten oder Dateien verändert und kein Deployment durchgeführt.
 
+**Ergänzung vom 21.11.2026:** PHP 8.3 bleibt das Ziel. Der Kompatibilitätsstand auf `codex/php83-compatibility` basiert auf dem gemergten Oktober-Release `5d49129`. Die technische Untergrenze wurde mit Composer und den Deployment-Einstiegen auf 8.3.21 vereinheitlicht; die CI deckt 8.3.21 und 8.3.36 mit MySQL/SQLite ab. Sicherheits-Backports des Metanet-PHP-Binaries werden damit nicht bescheinigt. Die nachfolgenden Oktober-Ergebnisse bleiben historische Nachweise.
+
+Der erneute Composer-Audit meldete acht Advisories in fünf seit Oktober unverändert gesperrten Paketen. Die eng begrenzte Aktualisierung umfasst Laravel 13.38.0 → 13.40.0, Symfony HttpFoundation/HttpKernel/Routing 7.4.21 → 7.4.23 und Mime 7.4.19 → 7.4.22. Alle anderen Paketversionen bleiben erhalten. Die Herstellergrenzen sind im Composer-Audit abgedeckt; das allein behauptet keine zuvor nachgewiesene Ausnutzbarkeit aller Meldungen in TripControl. Das Projekt verwendet insbesondere keine `Concurrency::run()`-Aufrufe, benutzerdefinierten MIME-Parameternamen, Symfony-Security-Firewalls oder Host-Platzhalter-Routen. Bestehende Host-/CSRF-, Mail- und Berechtigungstests sowie neue MIME-Regressionstests sichern die verwendeten Schnittstellen ab. Die Datenbankmigrationen und alle Bestands-/Backup-/Schreibstopp-Schutzprüfungen bleiben erhalten.
+
 ## Schritte und Abdeckung des Bestandsaudits
 
 | Befund | Umsetzung | Verbleibender Betriebsnachweis |

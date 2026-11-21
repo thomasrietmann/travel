@@ -11,7 +11,7 @@ Stand: 24.10.2026. **Staging-Abnahme vom Betreiber am 24.10.2026 bestätigt. Kei
 | Eigenes SMTP-/IMAP-Testpostfach | `travel.at@aufbollen.ch` |
 | Restore-Ziel | **Neu und leer anzulegen**, Vorschlag `travel-at-restore`; eigener DB-Benutzer nur dafür |
 | Separate PHPUnit-Datenbank | Nur bei einem Testlauf auf dem Host: neue leere `tripcontrol_test`; niemals `travel-at` mit Bestandskopie verwenden |
-| PHP | 8.3.36; Pfade für Web/SSH/Cron in Plesk bestätigen |
+| PHP | PHP 8.3, technische Mindestversion 8.3.21; zuletzt Web 8.3.36 / SSH 8.3.21 beobachtet. Version, Erweiterungen und Pfade für Web/SSH/Cron separat bestätigen; kein PHP-8.4-Wechsel erforderlich. |
 | Noch zu erfassen | Projekt-/Restore-/Storage-Pfade, DB-Benutzerrechte, tatsächliche MySQL-Version, SMTP-/IMAP-TLS-Hostname, Metanet-authserv-id und Nachweis der Headerbereinigung |
 
 Passwörter und APP_KEY ausschliesslich serverseitig hinterlegen. [Konfigurationsvorlage](ops/metanet/staging.env.example) enthält die vereinbarten Ziele und keine Zugangsdaten. **Keine vollständige produktive `.env` als aktive Staging-Konfiguration kopieren.** Den zum Backup gehörenden APP_KEY gezielt übernehmen, damit Erhaltung und verschlüsselte Bestandswerte geprüft werden können. Dieser Schlüssel und die Bestandskopie verlangen denselben Zugriffsschutz wie Produktion.

@@ -1,6 +1,8 @@
 # TripControl
 
-TripControl verwaltet Reisen, Buchungen, Zahlungen, Aufgaben, Dokumente und geteilte Reiseübersichten. Die Anwendung läuft mit Laravel 13 und Blade; Metanet-Produktion verwendet laut Betreiber PHP 8.3.36 und MySQL.
+TripControl verwaltet Reisen, Buchungen, Zahlungen, Aufgaben, Dokumente und geteilte Reiseübersichten. Die Anwendung läuft mit Laravel 13 und Blade auf PHP 8.3 und MySQL. Auf Metanet wurden zuletzt PHP 8.3.36 für Web/FPM und 8.3.21 für SSH/CLI beobachtet. Technische Mindestversion ist PHP 8.3.21; PHP 8.4 ist nicht erforderlich.
+
+Composer löst Abhängigkeiten mit `config.platform.php=8.3.21` auf. Ein erfolgreicher Kompatibilitätstest bescheinigt keine aktuellen Sicherheitskorrekturen des PHP-Binaries: Web, SSH und Cron sollen einen vom Hoster gepflegten PHP-8.3-Patchstand verwenden. `php -v` und `php -m` für den konkreten SSH-/Cron-Pfad separat von der Web-phpinfo prüfen. Es ist kein Wechsel der produktiven PHP-Webversion erforderlich.
 
 **Bestehende Produktion aktualisieren:** ausschliesslich nach [DEPLOY_METANET.md](DEPLOY_METANET.md) vorgehen. Keine Neuinstallation über vorhandene Daten ausführen. [Umsetzungsstand und Prüfgrenzen](SECURITY_IMPLEMENTATION.md).
 
@@ -34,7 +36,9 @@ pnpm run build
 
 Die Tests verwenden standardmässig SQLite im Speicher und gefälschte HTTP-/Storage-Dienste. Es werden weder echte OpenAI-Aufrufe noch echte Mails gesendet. Für den separaten MySQL-Testlauf siehe Deploymentanleitung. Die Suite zerstört ihre Testdatenbank; sie verweigert Datenbanknamen ausser `:memory:` oder einem Namen mit `_test` am Ende und verweigert einen anderen Anwendungsmodus als `testing`.
 
-PHP 8.3.36 mit MySQL 8.0 und SQLite ist in `.github/workflows/tests.yml` vorgesehen. Lokal wurden mit PHP 8.3.36 und MySQL 8.0.46 einschliesslich Staging-, Restore- und Upgrade-Prüfungen alle **64 Tests / 459 Assertions** erfolgreich ausgeführt; [Protokolle und Grenzen](outputs/release-upgrade-2026-10-24/README.md). Die MySQL-Sperr-/Upgrade-Prüfungen werden unter SQLite übersprungen. Der optionale Restore-Test benötigt zusätzlich MySQL-Clientwerkzeuge und eine separate leere Testdatenbank. Die gebauten Assets werden mit ausgeliefert; auf Metanet ist kein Node-Prozess nötig. Tailwind wird lokal gebaut, JavaScript von der eigenen Domain geladen.
+Die CI-Matrix in `.github/workflows/tests.yml` prüft PHP **8.3.21 und 8.3.36**, jeweils mit MySQL 8.0 und SQLite, inklusive der tatsächlichen Composer-Plattformanforderungen. Der [Oktober-Nachweis](outputs/release-upgrade-2026-10-24/README.md) mit 64 Tests / 459 Assertions dokumentiert den damaligen Release. Die MySQL-Sperr-/Upgrade-Prüfungen werden unter SQLite übersprungen. Der optionale Restore-Test benötigt zusätzlich MySQL-Clientwerkzeuge und eine separate leere Testdatenbank. Die gebauten Assets werden mit ausgeliefert; auf Metanet ist kein Node-Prozess nötig. Tailwind wird lokal gebaut, JavaScript von der eigenen Domain geladen.
+
+**Lokaler Nachweis vom 21.11.2026:** Jeweils PHP **8.3.21 und 8.3.36** mit MySQL **8.0.46**: **78 Tests / 476 Assertions, keine übersprungenen Tests**, einschliesslich echter Dump-/Datei-Restore-Probe und wiederholtem Bestandsupgrade. Mit SQLite jeweils **78 Tests / 410 Assertions, zehn MySQL-Prüfungen übersprungen**. Composer-Plattformprüfung und PHP-Syntaxprüfung bestanden auf beiden Laufzeiten; Composer-Audit ohne bekannte Advisories. Isolierte macOS/ARM64-Builds aus offiziellen PHP-Quellen; keine Metanet-, SMTP-/IMAP- oder OpenAI-Verbindungen. IMAP und mbregex sind in diesen lokalen Builds nicht enthalten; Mailbox/HTTP werden in der Suite durch Testimplementierungen ersetzt. Zusätzlich ist der erfolgreiche GitHub-CI-Lauf für den jeweiligen Release-Commit erforderlich.
 
 ## Architektur
 

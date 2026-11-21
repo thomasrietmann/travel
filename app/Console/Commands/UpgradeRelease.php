@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Services\ProcessLock;
 use App\Services\ReleaseUpgrade;
 use App\Services\StagingInventory;
+use App\Support\PhpRuntime;
 use DomainException;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -27,9 +28,10 @@ class UpgradeRelease extends Command
         try {
             if (! app()->environment(['production', 'staging']) || config('app.debug')
                 || ! filled(config('app.key')) || config('hashing.driver') !== 'bcrypt'
-                || version_compare(PHP_VERSION, '8.3.36', '<') || DB::connection()->getDriverName() !== 'mysql') {
-                throw new DomainException('Erforderlich: production/staging ohne Debug, bestehender APP_KEY, bcrypt, PHP >= 8.3.36 und MySQL.');
+                || ! PhpRuntime::supports() || DB::connection()->getDriverName() !== 'mysql') {
+                throw new DomainException('Erforderlich: production/staging ohne Debug, bestehender APP_KEY, bcrypt, '.PhpRuntime::requirement().' und MySQL.');
             }
+            $this->line('CLI: PHP '.PHP_VERSION.' ('.PHP_BINARY.'). Web- und Cron-Laufzeit separat prüfen.');
             if (app()->environment('production') && config('staging.checks_enabled')) {
                 throw new DomainException('STAGING_CHECKS_ENABLED muss auf Produktion false sein.');
             }
