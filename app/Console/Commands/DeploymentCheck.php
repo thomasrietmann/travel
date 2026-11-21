@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Document;
 use App\Models\User;
 use App\Services\DocumentStorage;
+use App\Support\PhpRuntime;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -29,7 +30,7 @@ class DeploymentCheck extends Command
 
             return self::FAILURE;
         }
-        $this->check(version_compare(PHP_VERSION, '8.3.36', '>='), 'PHP mindestens 8.3.36');
+        $this->check(PhpRuntime::supports(), PhpRuntime::requirement().' (CLI: '.PHP_VERSION.')');
         $this->check(app()->environment($expectedEnvironment) && ! config('app.debug'), $expectedEnvironment.' ohne Debug');
         $this->check(filled(config('app.key')), 'Bestehender APP_KEY vorhanden (Übereinstimmung mit Backup separat prüfen)');
         $this->check(str_starts_with(config('app.url'), 'https://') && config('session.secure'), 'HTTPS-URL und sichere Session-Cookies');

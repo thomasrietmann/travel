@@ -7,7 +7,7 @@ Die Staging-Abnahme wurde vom Betreiber am **24.10.2026 bestätigt**. Diese Anle
 Einstieg: `php ops/metanet/upgrade.php`, alternativ `php artisan deployment:upgrade`.
 
 - Ohne `--apply`: nur Bestandsprüfung und Anzeige der ausstehenden Release-Migrationen; keine Schema- oder Dokumentänderung.
-- Mit `--apply`: verlangt exakt benannte MySQL-Datenbank, `production` oder `staging` ohne Debug, vorhandenen APP_KEY, bcrypt, PHP mindestens 8.3.36, InnoDB, Wartungsmodus und bestätigtes Backup/gestoppte Schreiber.
+- Mit `--apply`: verlangt exakt benannte MySQL-Datenbank, `production` oder `staging` ohne Debug, vorhandenen APP_KEY, bcrypt, PHP mindestens 8.3.21 (kleiner als 9.0), InnoDB, Wartungsmodus und bestätigtes Backup/gestoppte Schreiber.
 - Erlaubt ausschliesslich die beiden neuen Migrationen `2026_10_24_000001_create_document_file_deletions_table` und `2026_10_24_000002_add_email_identity_security`. Ältere noch ausstehende, fremde oder teilweise ausgeführte Migrationen führen zum Abbruch.
 - Speichert vor der ersten Änderung ein privates `upgrade-before.json` (0600). Vergleicht neun Geschäftstabellen samt ursprünglichen Spalten, Passwort-Hashes, Tokens, APP_KEY-Fingerabdruck und alle referenzierten Dokumentbytes vor/nach der Änderung. Werte der Geschäftstabellen stehen nur als HMAC im Inventar.
 - `--copy-documents` kopiert zusätzlich geprüfte Altdateien in die private Ablage. Originale bleiben erhalten, bestehende Dokumentpfade ändern sich nicht. Widersprüchliche/fehlende Kopien führen zum Abbruch.
@@ -15,6 +15,16 @@ Einstieg: `php ops/metanet/upgrade.php`, alternativ `php artisan deployment:upgr
 - Eine eigene Prozesssperre und die gemeinsame Importsperre verhindern konkurrierende Upgrades/neue Importe. Sie ersetzen nicht die betriebliche Schreibpause: alte Cronprozesse, Wartungs-Bypässe, Queue und manuelle DB-Schreiber müssen separat gestoppt sein.
 
 Es gibt kein automatisches `migrate:fresh`, Seeding, `key:generate`, Passwort-/Tokenwechsel, SQL-Restore, Rollback, Löschen alter Dokumente oder `artisan up`. Das Skript installiert keine Pakete, wechselt keinen Git-Stand und ändert weder `.env` noch Mailfreigaben. Diese Schritte gehören bewusst zum betreuten Releaseablauf.
+
+## PHP-8.3-Kompatibilität – Ergänzung vom 21.11.2026
+
+Die bisherige Mindestprüfung auf 8.3.36 entsprach dem zuerst geprüften Release und war keine erforderliche Sprachfunktion der Anwendung. Die technische Untergrenze ist jetzt zentral in `app/Support/PhpRuntime.php` auf **8.3.21** definiert und mit Composer abgestimmt. Damit wird die auf Metanet beobachtete Kombination aus CLI 8.3.21 und Web/FPM 8.3.36 berücksichtigt; PHP 8.4 ist nicht erforderlich. Der Einstieg prüft die Version vor dem Laden von Composer/Laravel.
+
+Der gemergte Oktober-Commit `5d49129` enthält noch die alte Sperre. Für die neue Kompatibilität müssen die Änderungen vom 21.11.2026 erst als neuer Release übernommen werden; nicht nur die Versionsprüfung auf dem Server von Hand entfernen. Für dieses Kompatibilitätsupdate sind **keine zusätzlichen Datenbankmigrationen** nötig. Die beiden Oktober-Migrationen bleiben unverändert.
+
+Technische Kompatibilität und Sicherheits-Patchstand getrennt beurteilen: die Versionsnummer 8.3.21 beweist keine Sicherheits-Backports des Hosters. Ein aktuelles bzw. vom Hoster sicherheitsgepflegtes PHP 8.3 bleibt die Betriebsempfehlung. Die bestandene Oktober-Abnahme ist kein Nachweis für die geänderten Abhängigkeiten; vor dem produktiven Update die neue Version auf dem tatsächlichen Hosting-PHP im Staging prüfen.
+
+Lokale Prüfung am 21.11.2026: PHP 8.3.21 und 8.3.36 bestanden jeweils die gesamte MySQL-Suite mit **78 Tests / 476 Assertions**, einschliesslich Restore und Bestandserhalt. Die Grenzen des lokalen Nachweises stehen im [README](README.md#tests-und-assets). Produktion und Metanet-Cron wurden nicht verändert.
 
 ## 1. Release und aktuelle Sicherung vorbereiten
 
@@ -25,7 +35,7 @@ Es gibt kein automatisches `migrate:fresh`, Seeding, `key:generate`, Passwort-/T
 
 ```bash
 TC_PHP=/opt/php83/bin/php       # tatsächlichen bestehenden PHP-8.3-Pfad prüfen
-TC_COMPOSER=/bin/composer2     # tatsächlichen Composer-Pfad prüfen
+TC_COMPOSER=/usr/bin/composer2 # in der Metanet-SSH-Sitzung ermittelter Pfad; erneut prüfen
 "$TC_PHP" -v
 "$TC_PHP" "$TC_COMPOSER" install --no-dev --prefer-dist --no-interaction --optimize-autoloader
 "$TC_PHP" "$TC_COMPOSER" check-platform-reqs --no-dev

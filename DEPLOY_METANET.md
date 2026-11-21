@@ -1,6 +1,6 @@
 # TripControl: sicheres Update auf Metanet
 
-Zielsystem laut Betreiber: **PHP 8.3.36, MySQL**, bestehende Benutzer, Reisen und Dokumente. Diese Anleitung ersetzt die frühere Anleitung zur Neuinstallation. Sie beschreibt ein Update des vorhandenen Projekts. Der Betreiber hat die Staging-Abnahme am **24.10.2026 bestätigt**; ein Produktionsdeployment wurde in dieser Arbeit nicht ausgeführt.
+Zielsystem laut Betreiber: **PHP 8.3, MySQL**, bestehende Benutzer, Reisen und Dokumente. Zuletzt beobachtet: Web/FPM **8.3.36**, SSH/CLI **8.3.21**. Technische Mindestversion ist 8.3.21; PHP 8.4 wird nicht benötigt. Aktuelle Sicherheitskorrekturen des Hosters sind unabhängig von dieser Kompatibilitätsgrenze erforderlich. Diese Anleitung beschreibt ein Update des vorhandenen Projekts. Der Betreiber hat die damalige Staging-Abnahme am **24.10.2026 bestätigt**; spätere Änderungen sind erneut abzunehmen. Ein Produktionsdeployment wurde in dieser Arbeit nicht ausgeführt.
 
 **Upgrade nach bestätigter Abnahme:** [Aufrufanleitung für das Bestandsupgrade](UPGRADE_METANET.md) und `ops/metanet/upgrade.php` ausführen, zunächst ohne `--apply`. Das Skript begrenzt Migrationen auf diesen Release und vergleicht Bestandsdaten/Dokumente vor und nach der Änderung. Die [Staging-Abnahme](STAGING_ABNAHME_METANET.md) für `travel-at.aufbollen.ch` bleibt als Ablauf dokumentiert; ihre Einzelbelege werden vom Betreiber verwahrt.
 
@@ -18,7 +18,7 @@ Eine verantwortliche Person begleitet das Wartungsfenster. In Plesk den tatsäch
 
 ```bash
 TC_PHP=/opt/php83/bin/php
-TC_COMPOSER=/bin/composer2
+TC_COMPOSER=/usr/bin/composer2
 "$TC_PHP" -v
 "$TC_PHP" "$TC_COMPOSER" --version
 "$TC_PHP" -m
@@ -34,7 +34,7 @@ Vorher dokumentieren, ohne Geheimnisse ins Repository zu kopieren:
 - Benutzer-, Reise-, Buchungs-, Aufgaben-, Dokument-, Alias-, Geburtstags- und Freigabeanzahlen. Zusätzlich Dokumentinventar mit Dateipfad und SHA-256 aus einer isolierten Kopie erstellen.
 - Vorhandene Cronjobs, deren PHP-Version und den letzten erfolgreichen Import.
 
-Das neue Lockfile wurde mangels eingechecktem altem Lockfile neu aufgelöst (Laravel 13.38.0, Dompdf 3.1.6). **Vor Freigabe mit den wirklich produktiven Versionen vergleichen.** Das ist kein Nachweis, dass Produktion bisher dieselben Versionen verwendet. Bei Versionskonflikten zuerst im Testsystem auflösen, niemals spontan `composer update` auf Produktion ausführen.
+Das Oktober-Lockfile wurde mangels eingechecktem altem Lockfile neu aufgelöst. Das Kompatibilitätsupdate vom 21.11.2026 enthält Laravel 13.40.0, Dompdf 3.1.6 und Sicherheitsupdates für Symfony HttpFoundation, HttpKernel, Mime und Routing innerhalb der 7.4-Reihe. Composer verwendet für die Auflösung PHP 8.3.21. **Vor Freigabe mit den wirklich produktiven Versionen vergleichen.** Das ist kein Nachweis, dass Produktion bisher dieselben Versionen verwendet. Bei Versionskonflikten zuerst im Testsystem auflösen, niemals spontan `composer update` auf Produktion ausführen.
 
 **Abbrechen**, wenn Backup/Restore nicht nachgewiesen ist, Dokumente fehlen oder Kopien verschiedene Prüfsummen haben, unbekannte lokale Änderungen bestehen, Storage-Pfade nicht in Web und CLI übereinstimmen, Migrationen ausserhalb dieser Änderung anstehen oder der MySQL-Testlauf scheitert.
 
@@ -56,7 +56,7 @@ DB_CONNECTION=mysql DB_HOST=127.0.0.1 DB_DATABASE=tripcontrol_test DB_USERNAME=t
   "$TC_PHP" vendor/bin/phpunit
 ```
 
-Das Passwort ausschliesslich in der isolierten Test-`.env` oder sicherer CI-Konfiguration hinterlegen. Der Testbenutzer darf nur die Testdatenbank bearbeiten. `.github/workflows/tests.yml` führt die Suite mit PHP 8.3.36 sowie SQLite und MySQL 8.0 aus. Die tatsächliche Metanet-MySQL-Version zusätzlich im Staging prüfen; die CI-Datei allein ist noch kein erfolgreicher CI-Lauf.
+Das Passwort ausschliesslich in der isolierten Test-`.env` oder sicherer CI-Konfiguration hinterlegen. Der Testbenutzer darf nur die Testdatenbank bearbeiten. `.github/workflows/tests.yml` führt die Suite mit PHP 8.3.21 und 8.3.36 sowie jeweils SQLite und MySQL 8.0 aus. Die tatsächliche Metanet-MySQL-Version zusätzlich im Staging prüfen; die CI-Datei allein ist noch kein erfolgreicher CI-Lauf.
 
 **Lokaler Nachweis vom 24.10.2026:** PHP **8.3.36** mit MySQL **8.0.46**, InnoDB und striktem SQL-Modus: **45 Tests / 337 Assertions bestanden, keine übersprungenen Tests**. Auch der Upgrade-Test zum Erhalt bestehender Zeilen, Passwort-Hashes, Tokens und Dokumentdateien sowie die Sperrprüfung über zwei MySQL-Verbindungen bestanden. Laufzeit war macOS/ARM64 mit temporärer Testdatenbank; kein Zugriff auf Produktion, kein Deployment. [Testprotokolle und Grenzen](outputs/php83-mysql-tests-2026-10-24/README.md). Dieser Nachweis ersetzt weder Restore-/Chroot-Prüfungen noch die Tests der tatsächlichen Metanet-Datenbankversion und Maildienste.
 
