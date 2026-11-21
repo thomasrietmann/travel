@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Document;
 use App\Models\User;
 use App\Services\DocumentStorage;
+use App\Services\IncomingMailImporter;
 use App\Support\PhpRuntime;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -84,7 +85,9 @@ class DeploymentCheck extends Command
         }
         if ($this->option('mail')) {
             $this->check(extension_loaded('imap'), 'IMAP-Erweiterung');
-            $this->check(config('mail_import.enabled') && config('mail_import.authentication_results_trusted') && filled(config('mail_import.trusted_authserv_ids')), 'Import und geprüfte Header-Vertrauensgrenze konfiguriert');
+            $activationProblem = IncomingMailImporter::activationProblem();
+            $mode = config('mail_import.auth_mode', 'authserv');
+            $this->check($activationProblem === null, $activationProblem ?? "Mailimport mit Absenderprüfung im Modus {$mode} konfiguriert");
             $this->check(filled(config('ai.openai.api_key')), 'AI-Schlüssel für Mailimport vorhanden');
             $this->check(config('mail.default') === 'smtp' && filled(config('mail.mailers.smtp.username')) && filled(config('mail.mailers.smtp.password')) && filled(config('mail.from.address')), 'SMTP für Adressbestätigung konfiguriert');
             $this->warn('Dieser Check beweist weder SMTP-Zustellung noch Header-Vertrauen. Echte Positiv-/Negativtests sind Freigabevoraussetzung.');

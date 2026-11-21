@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\MailImportNotConfigured;
 use App\Models\ImportedMail;
 use App\Models\User;
 use App\Services\EmailIdentity;
@@ -19,7 +20,13 @@ Artisan::command('mail:import {--limit= : Maximale Anzahl Mails fuer diesen Lauf
 
     $logger->info('Email-Import per Artisan wurde gestartet.');
 
-    $stats = app(IncomingMailImporter::class)->import((int) ($this->option('limit') ?: 0));
+    try {
+        $stats = app(IncomingMailImporter::class)->import((int) ($this->option('limit') ?: 0));
+    } catch (MailImportNotConfigured $exception) {
+        $this->error($logger->reportFailure('Email-Import per Artisan ist fehlgeschlagen.', $exception));
+
+        return 1;
+    }
 
     $logger->info('Email-Import per Artisan wurde abgeschlossen.', $stats);
 

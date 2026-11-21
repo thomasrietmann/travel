@@ -38,13 +38,11 @@ class MailImportController extends Controller
                 ->route('admin.mail-import.index')
                 ->with('status', "{$stats['imported']} Mails importiert, {$stats['ignored']} ignoriert, {$stats['failed']} fehlgeschlagen, {$stats['deferred']} zurückgestellt.");
         } catch (Throwable $exception) {
-            $this->logger->error('Manueller Email-Import ist fehlgeschlagen.', [
-                'exception_class' => $exception::class,
-            ]);
+            $message = $this->logger->reportFailure('Manueller Email-Import ist fehlgeschlagen.', $exception);
 
             return redirect()
                 ->route('admin.mail-import.index')
-                ->with('error', 'Email-Import fehlgeschlagen. Bitte Konfiguration und Importprotokoll prüfen.');
+                ->with('error', $message);
         }
     }
 }

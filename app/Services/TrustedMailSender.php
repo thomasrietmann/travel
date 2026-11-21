@@ -2,11 +2,15 @@
 
 namespace App\Services;
 
+use Closure;
+
 class TrustedMailSender
 {
-    public function address(object $headers, string $rawHeaders): ?string
+    public function __construct(private readonly DkimMailVerifier $dkim) {}
+
+    public function fromAddress(object $headers, string $rawHeaders): ?string
     {
-        if (! config('mail_import.authentication_results_trusted') || strlen($rawHeaders) > 256 * 1024) {
+        if (strlen($rawHeaders) > 256 * 1024) {
             return null;
         }
         // Reply-To and Sender do not establish the sending identity.
@@ -15,7 +19,21 @@ class TrustedMailSender
         }
         $from = $headers->from[0];
         $email = mb_strtolower(($from->mailbox ?? '').'@'.($from->host ?? ''));
-        if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : null;
+    }
+
+    public function address(object $headers, string $rawHeaders, ?Closure $readBody = null): ?string
+    {
+        $email = $this->fromAddress($headers, $rawHeaders);
+        if ($email === null) {
+            return null;
+        }
+        $mode = config('mail_import.auth_mode', 'authserv');
+        if ($mode === 'dkim') {
+            return $readBody && $this->dkim->accepts($email, $headers, $rawHeaders, $readBody) ? $email : null;
+        }
+        if ($mode !== 'authserv' || ! config('mail_import.authentication_results_trusted')) {
             return null;
         }
         $domain = substr(strrchr($email, '@'), 1);

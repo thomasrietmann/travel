@@ -57,7 +57,7 @@ Ein gesetzter `OPENAI_API_KEY` aktiviert die bestehende AI-Auswertung. Der Webim
 
 Weitergeleitete Mails werden nur einem Benutzer mit bestätigter, eindeutiger Adresse und akzeptierter Absenderauthentifizierung zugeordnet. SMTP-Daten werden in `.env` hinterlegt; Bestätigungsmails werden unter Einstellungen angefordert. Bestehende Benutzer können sich auch ohne Bestätigung weiterhin anmelden.
 
-Die Metanet-Header-Vertrauensgrenze muss vor Aktivierung geprüft werden. `MAIL_IMPORT_AUTH_RESULTS_TRUSTED` ist standardmässig `false`. Ohne diese Freigabe erfolgt kein Mailimport. Die konkrete Einrichtung und Tests stehen in der Deploymentanleitung.
+Standardmässig prüft `MAIL_IMPORT_AUTH_MODE=authserv` das DMARC-Ergebnis des bestätigten Empfangsservers. Bis Metanet seine Kennung bestätigt, kann `MAIL_IMPORT_AUTH_MODE=dkim` Weiterleitungen automatisch anhand ihrer DKIM-Signatur prüfen. Dafür die Importadresse beim Weiterleiten ins **An** oder **Cc** setzen. TripControl prüft den öffentlichen DNS-Schlüssel der Absenderdomain, den signierten Empfänger, den vorhandenen Betreff und den vollständigen Nachrichteninhalt. Beide Modi benötigen `MAIL_IMPORT_ENABLED=true`. [Einrichtung und Rückkehr zum Standardmodus](DEPLOY_METANET.md#7-mailimport-separat-freigeben)
 
 ```bash
 php artisan mail:import --limit=1

@@ -7,6 +7,8 @@ use RuntimeException;
 
 class MailContentReader
 {
+    public const MAX_MAIL_BYTES = 25 * 1024 * 1024;
+
     public function __construct(private readonly ImapMailbox $mailbox) {}
 
     public function read(int $messageNumber): array
@@ -40,7 +42,7 @@ class MailContentReader
 
         $rawBody = $this->mailbox->body($messageNumber, $partNumber);
         $result['bytes'] += strlen($rawBody);
-        if ($result['bytes'] > 25 * 1024 * 1024) {
+        if ($result['bytes'] > self::MAX_MAIL_BYTES) {
             throw new RuntimeException('Mail ist zu gross.');
         }
         $body = $this->decodeBody($rawBody, (int) ($part->encoding ?? 0));

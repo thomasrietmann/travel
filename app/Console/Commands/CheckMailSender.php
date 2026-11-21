@@ -25,9 +25,9 @@ class CheckMailSender extends Command
             return self::FAILURE;
         }
         $content = file_get_contents($path);
-        $header = preg_split('/\r?\n\r?\n/', $content, 2)[0];
+        [$header, $body] = array_pad(preg_split('/\r?\n\r?\n/', $content, 2), 2, '');
         $parsed = imap_rfc822_parse_headers($header);
-        $accepted = $parsed && $sender->address($parsed, $header) !== null;
+        $accepted = $parsed && $sender->address($parsed, $header, fn () => $body) !== null;
         $this->line($accepted ? 'Absenderauthentifizierung akzeptiert. Adressbesitz wird beim Import separat geprüft.' : 'Absenderauthentifizierung abgelehnt.');
 
         return $accepted ? self::SUCCESS : self::FAILURE;

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\MailImportNotConfigured;
 use App\Models\Booking;
 use App\Models\Document;
 use App\Models\ImportedMail;
@@ -26,21 +27,45 @@ class IncomingMailImporter
         private readonly ProcessLock $lock,
     ) {}
 
+    public static function activationProblem(): ?string
+    {
+        $problems = [];
+        if (! config('mail_import.enabled')) {
+            $problems[] = 'Der Mailimport ist deaktiviert (MAIL_IMPORT_ENABLED).';
+        }
+        $mode = config('mail_import.auth_mode', 'authserv');
+        if ($mode === 'authserv') {
+            if (! config('mail_import.authentication_results_trusted')) {
+                $problems[] = 'Die Absenderprüfung ist noch nicht freigegeben (MAIL_IMPORT_AUTH_RESULTS_TRUSTED).';
+            }
+            if (! config('mail_import.trusted_authserv_ids')) {
+                $problems[] = 'In MAIL_IMPORT_AUTHSERV_IDS fehlt die bestätigte Kennung des empfangenden Mailservers.';
+            }
+        } elseif ($mode === 'dkim' && ! function_exists('dns_get_record')) {
+            $problems[] = 'Die direkte DKIM-Prüfung benötigt DNS-TXT-Abfragen mit dns_get_record.';
+        } elseif ($mode !== 'dkim') {
+            $problems[] = 'MAIL_IMPORT_AUTH_MODE muss authserv oder dkim sein.';
+        }
+
+        return $problems === [] ? null : implode(' ', $problems);
+    }
+
     public function import(int $limit = 0): array
     {
-        if (! config('mail_import.enabled') || ! config('mail_import.authentication_results_trusted') || ! config('mail_import.trusted_authserv_ids')) {
-            throw new RuntimeException('Mailimport benötigt eine geprüfte Absenderauthentifizierung.');
+        $problem = self::activationProblem();
+        if ($problem !== null) {
+            throw new MailImportNotConfigured($problem);
         }
 
         return $this->lock->run('mail-import-service', function () use ($limit): array {
             $this->mailbox->open();
             $stats = ['imported' => 0, 'ignored' => 0, 'failed' => 0, 'deferred' => 0];
             try {
-                foreach ($this->mailbox->messages(1000) as $number) {
+                foreach ($this->mailbox->messages(1000) as $uid) {
                     try {
-                        $stats[$this->importMessage((int) $number)]++;
+                        $stats[$this->importMessage((int) $uid)]++;
                     } catch (Throwable $exception) {
-                        $this->logger->error('Mail konnte nicht verarbeitet werden.', ['message_number' => $number, 'exception_class' => $exception::class]);
+                        $this->logger->error('Mail konnte nicht verarbeitet werden.', ['message_uid' => $uid, 'exception_class' => $exception::class]);
                         $stats['failed']++;
                     }
                     if (max(1, min(10, $limit ?: config('mail_import.max_messages', 10))) <= $stats['imported'] + $stats['failed']) {
@@ -55,27 +80,40 @@ class IncomingMailImporter
         });
     }
 
-    private function importMessage(int $number): string
+    private function importMessage(int $uid): string
     {
-        $headers = $this->mailbox->headers($number);
-        $raw = $this->mailbox->rawHeaders($number);
-        $key = $this->mailbox->key($number);
-        $sender = $this->senders->address($headers, $raw);
+        $key = $this->mailbox->key($uid);
         $existing = ImportedMail::query()->where('message_id', $key)->first();
-        // Preserve deduplication of messages already committed by the previous release.
-        if (! $existing && preg_match('/^Message-ID:\s*(.+)$/mi', $raw, $match)) {
-            $existing = ImportedMail::query()->where('message_id', trim($match[1]))
-                ->where('sender_email', $sender ?? '')->where('status', 'imported')->first();
-        }
         if ($existing?->status === 'imported') {
-            $this->mailbox->markSeen($number);
+            $this->mailbox->markSeen($uid);
 
             return 'ignored';
         }
         if ($existing && ($existing->attempts >= 3 || (in_array($existing->status, ['failed', 'blocked'], true) && $existing->updated_at->gt(now()->subMinutes(15))))) {
             return 'deferred';
         }
-        $user = $sender ? $this->identities->verifiedUser($sender) : null;
+        $headers = $this->mailbox->headers($uid);
+        $raw = $this->mailbox->rawHeaders($uid);
+        $size = (int) ($headers->Size ?? 0);
+        $validSize = $size > 0 && $size <= MailContentReader::MAX_MAIL_BYTES;
+        $user = null;
+        $readBody = null;
+        if ($validSize && config('mail_import.auth_mode') === 'dkim') {
+            $from = $this->senders->fromAddress($headers, $raw);
+            $user = $from ? $this->identities->verifiedUser($from) : null;
+            if ($user) {
+                $readBody = fn () => $this->mailbox->body($uid, '');
+            }
+        }
+        $sender = $this->senders->address($headers, $raw, $readBody);
+        $user = $sender ? ($user ?? $this->identities->verifiedUser($sender)) : null;
+        // Preserve deduplication of messages already committed by the previous release.
+        if (! $existing && $sender !== null && preg_match('/^Message-ID:\s*(.+)$/mi', $raw, $match)
+            && ImportedMail::query()->where('message_id', trim($match[1]))->where('sender_email', $sender)->where('status', 'imported')->exists()) {
+            $this->mailbox->markSeen($uid);
+
+            return 'ignored';
+        }
         $subject = Str::limit(mb_decode_mimeheader((string) ($headers->subject ?? '')), 230, '');
         $record = $existing ?? new ImportedMail(['message_id' => $key]);
         $record->fill([
@@ -84,15 +122,19 @@ class IncomingMailImporter
             'notes' => $user ? 'Mail wird verarbeitet.' : 'Absenderauthentifizierung oder Adressbestätigung fehlt.',
         ])->save();
         if (! $user) {
+            if (config('mail_import.auth_mode') === 'dkim') {
+                $this->logger->info('Mail zurückgehalten. DKIM-Signatur, signierten Empfänger und bestätigte Absenderadresse prüfen.', ['imported_mail_id' => $record->id]);
+            }
+
             // Leave unread so ownership/configuration can be corrected without losing mail.
             return 'failed';
         }
         $record->increment('attempts');
         try {
-            if ((int) ($headers->Size ?? 0) <= 0 || (int) $headers->Size > 25 * 1024 * 1024) {
+            if (! $validSize) {
                 throw new RuntimeException('Mailgrösse ist ungültig.');
             }
-            $mail = $this->reader->read($number);
+            $mail = $this->reader->read($uid);
             $data = $this->extractor->extract($user, $subject, $mail['body'], $mail['attachments']);
             $trip = $this->documentStorage->transaction(function () use ($user, $data, $subject, $mail, $record): Trip {
                 $trip = $this->resolveTrip($user, $data);
@@ -120,7 +162,7 @@ class IncomingMailImporter
         // These operations must never turn a committed import into a retryable failure.
         $this->regenerateSummary($trip);
         $this->logger->info('Mail importiert.', ['imported_mail_id' => $record->id, 'user_id' => $user->id, 'trip_id' => $trip->id]);
-        $this->mailbox->markSeen($number);
+        $this->mailbox->markSeen($uid);
 
         return 'imported';
     }

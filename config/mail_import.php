@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'auth_mode' => env('MAIL_IMPORT_AUTH_MODE', 'authserv'),
     // Only enable after the receiving MTA strips forged Authentication-Results (RFC 8601).
     'authentication_results_trusted' => (bool) env('MAIL_IMPORT_AUTH_RESULTS_TRUSTED', false),
     'trusted_authserv_ids' => array_values(array_filter(array_map(fn ($value) => strtolower(trim($value)), explode(',', env('MAIL_IMPORT_AUTHSERV_IDS', ''))))),

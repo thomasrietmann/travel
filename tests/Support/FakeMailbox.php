@@ -11,6 +11,8 @@ class FakeMailbox extends ImapMailbox
 
     public string $auth = 'Authentication-Results: mx.example.test; dmarc=pass header.from=example.com';
 
+    public ?string $raw = null;
+
     public string $contents = "%PDF-1.4\nbooking";
 
     public int $size = 1024;
@@ -36,12 +38,16 @@ class FakeMailbox extends ImapMailbox
     {
         [$local, $host] = explode('@', $this->sender);
 
-        return (object) ['from' => [(object) ['mailbox' => $local, 'host' => $host]], 'subject' => 'Travel', 'Size' => $this->size];
+        return (object) [
+            'from' => [(object) ['mailbox' => $local, 'host' => $host]],
+            'to' => [(object) ['mailbox' => 'trips', 'host' => 'example.test']],
+            'subject' => 'Travel', 'Size' => $this->size,
+        ];
     }
 
     public function rawHeaders(int $number): string
     {
-        return "From: {$this->sender}\r\nMessage-ID: <legacy@example.com>\r\n{$this->auth}\r\n";
+        return $this->raw ?? "From: {$this->sender}\r\nMessage-ID: <legacy@example.com>\r\n{$this->auth}\r\n";
     }
 
     public function key(int $number): string

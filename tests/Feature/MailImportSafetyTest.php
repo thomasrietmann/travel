@@ -10,11 +10,15 @@ use App\Services\ImapMailbox;
 use App\Services\IncomingMailImporter;
 use App\Services\MailAiExtractor;
 use App\Services\MailContentReader;
+use App\Services\MailImportLogger;
 use App\Services\ProcessLock;
 use App\Services\TrustedMailSender;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Mockery;
 use Mockery\MockInterface;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Tests\Support\FakeMailbox;
 use Tests\TestCase;
@@ -28,7 +32,15 @@ class MailImportSafetyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        config(['mail_import.enabled' => true, 'mail_import.authentication_results_trusted' => true, 'mail_import.trusted_authserv_ids' => ['mx.example.test']]);
+        $logPath = Storage::disk('local')->path('mail-import.log');
+        config([
+            'mail_import.enabled' => true,
+            'mail_import.auth_mode' => 'authserv',
+            'mail_import.authentication_results_trusted' => true,
+            'mail_import.trusted_authserv_ids' => ['mx.example.test'],
+            'mail_import.log_path' => $logPath,
+            'logging.channels.mail_import.path' => $logPath,
+        ]);
         $this->mailbox = new FakeMailbox;
         $this->app->instance(ImapMailbox::class, $this->mailbox);
         $user = User::factory()->create(['email' => $this->mailbox->sender]);
@@ -41,6 +53,59 @@ class MailImportSafetyTest extends TestCase
         $this->app->instance(MailAiExtractor::class, $mock);
 
         return $mock;
+    }
+
+    public static function incompleteActivationSettings(): array
+    {
+        return [
+            'disabled' => [false, true, ['mx.example.test'], ['MAIL_IMPORT_ENABLED']],
+            'trust not confirmed' => [true, false, ['mx.example.test'], ['MAIL_IMPORT_AUTH_RESULTS_TRUSTED']],
+            'no trusted server' => [true, true, [], ['MAIL_IMPORT_AUTHSERV_IDS']],
+            'both trust settings missing' => [true, false, [], ['MAIL_IMPORT_AUTH_RESULTS_TRUSTED', 'MAIL_IMPORT_AUTHSERV_IDS']],
+        ];
+    }
+
+    #[DataProvider('incompleteActivationSettings')]
+    public function test_manual_import_explains_missing_settings_before_opening_the_mailbox(bool $enabled, bool $trusted, array $ids, array $expected): void
+    {
+        config(['mail_import.enabled' => $enabled, 'mail_import.authentication_results_trusted' => $trusted, 'mail_import.trusted_authserv_ids' => $ids]);
+        $this->mock(ImapMailbox::class)->shouldNotReceive('open');
+        $this->actingAs(User::factory()->create(['is_admin' => true]))
+            ->post(route('admin.mail-import.store'))
+            ->assertRedirect(route('admin.mail-import.index'))->assertSessionHas('error');
+
+        $log = implode("\n", app(MailImportLogger::class)->lastLines());
+        foreach ($expected as $setting) {
+            $this->assertStringContainsString($setting, session('error'));
+            $this->assertStringContainsString($setting, $log);
+        }
+        $this->assertDatabaseCount('imported_mails', 0);
+    }
+
+    public function test_command_explains_missing_trust_settings_and_logs_the_failure(): void
+    {
+        config(['mail_import.authentication_results_trusted' => false, 'mail_import.trusted_authserv_ids' => []]);
+        $this->mock(ImapMailbox::class)->shouldNotReceive('open');
+        $this->assertSame(1, Artisan::call('mail:import'));
+        $output = Artisan::output();
+        $log = implode("\n", app(MailImportLogger::class)->lastLines());
+        foreach (['MAIL_IMPORT_AUTH_RESULTS_TRUSTED', 'MAIL_IMPORT_AUTHSERV_IDS'] as $setting) {
+            $this->assertStringContainsString($setting, $output);
+            $this->assertStringContainsString($setting, $log);
+        }
+    }
+
+    public function test_manual_import_hides_unexpected_mailbox_error_details(): void
+    {
+        $this->mock(ImapMailbox::class)->shouldReceive('open')->once()->andThrow(new RuntimeException('private-server-reply'));
+        $this->actingAs(User::factory()->create(['is_admin' => true]))
+            ->post(route('admin.mail-import.store'))
+            ->assertRedirect(route('admin.mail-import.index'))->assertSessionHas('error');
+
+        $log = implode("\n", app(MailImportLogger::class)->lastLines());
+        $this->assertStringContainsString('RuntimeException', $log);
+        $this->assertStringNotContainsString('private-server-reply', $log);
+        $this->assertStringNotContainsString('private-server-reply', session('error'));
     }
 
     public function test_valid_import_is_idempotent_and_stores_one_private_document(): void
