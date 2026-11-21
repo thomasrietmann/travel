@@ -47,7 +47,7 @@ class BookingController extends Controller
 
         return view('bookings.edit', [
             'trip' => $booking->trip,
-            'booking' => $booking->load('documents'),
+            'booking' => $booking->load(['documents', 'stops' => fn ($query) => $query->orderBy('start_date')->orderBy('start_time')]),
         ]);
     }
 
@@ -56,7 +56,21 @@ class BookingController extends Controller
         $this->authorize('update', $booking);
 
         $this->storage->transaction(function () use ($request, $booking): void {
+            $booking = Booking::query()->lockForUpdate()->findOrFail($booking->id);
+            $previousStart = $booking->start_date?->toDateString();
+            $previousEnd = $booking->end_date?->toDateString();
             $booking->update($this->bookingData($request));
+            if ($previousStart && $booking->start_date && $booking->wasChanged(['start_date', 'end_date'])
+                && in_array($booking->category, ['hotel', 'car', 'camper'], true)) {
+                // Move an enriched stay or rental that followed the original reservation period.
+                $matchingStops = $booking->stops()->whereDate('start_date', $previousStart);
+                if ($previousEnd) {
+                    $matchingStops->whereDate('end_date', $previousEnd);
+                } else {
+                    $matchingStops->whereNull('end_date');
+                }
+                $matchingStops->update(['start_date' => $booking->start_date->toDateString(), 'end_date' => $booking->end_date?->toDateString()]);
+            }
             $this->storeDocument($request, $booking->trip, $booking);
         });
 

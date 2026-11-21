@@ -21,14 +21,14 @@
                 <img src="{{ asset('brand/tripcontrol-logo.svg') }}" alt="TripControl" class="h-12 w-auto max-w-[220px] sm:max-w-[280px]">
             </a>
 
-            <button type="button" data-mobile-menu-button class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 text-slate-700 hover:bg-slate-100 md:hidden" aria-label="Menü öffnen" aria-expanded="false">
+            <button type="button" data-mobile-menu-button class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-300 text-slate-700 hover:bg-slate-100 lg:hidden" aria-label="Menü öffnen" aria-expanded="false">
                 <span class="sr-only">Menü öffnen</span>
                 <span class="block h-0.5 w-5 rounded bg-current"></span>
                 <span class="absolute block h-0.5 w-5 translate-y-1.5 rounded bg-current"></span>
                 <span class="absolute block h-0.5 w-5 -translate-y-1.5 rounded bg-current"></span>
             </button>
 
-            <nav class="hidden items-center justify-end gap-2 text-sm md:flex">
+            <nav class="hidden items-center justify-end gap-2 text-sm lg:flex">
                 @auth
                     @if (auth()->user()->is_admin)
                         <a href="{{ route('admin.dashboard') }}" class="rounded-md px-3 py-2 font-medium {{ request()->routeIs('admin.dashboard', 'admin.users.*') ? 'bg-slate-100 text-slate-950' : 'text-slate-700 hover:bg-slate-100 hover:text-slate-950' }}">Benutzer</a>
@@ -52,7 +52,7 @@
             </nav>
         </div>
 
-        <nav data-mobile-menu class="hidden border-t border-slate-200 px-4 py-3 text-sm md:hidden">
+        <nav data-mobile-menu class="hidden border-t border-slate-200 px-4 py-3 text-sm lg:hidden">
             <div class="flex flex-col gap-1">
                 @auth
                     @if (auth()->user()->is_admin)

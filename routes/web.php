@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\DocumentOverviewController;
 use App\Http\Controllers\EmailVerificationController;
+use App\Http\Controllers\ItineraryStopController;
 use App\Http\Controllers\OpenTasksController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskController;
@@ -47,6 +48,7 @@ Route::middleware(['auth', 'not_admin', 'throttle:writes'])->group(function () {
     Route::delete('/settings/birthdays/{birthday}', [SettingsController::class, 'destroyBirthday'])->name('settings.birthdays.destroy');
 
     Route::resource('trips', TripController::class);
+    Route::resource('trips.stops', ItineraryStopController::class)->scoped()->except(['index', 'show']);
     Route::post('/trips/{trip}/shares', [TripShareController::class, 'store'])->name('trips.shares.store');
     Route::delete('/trips/{trip}/shares/{user}', [TripShareController::class, 'destroy'])->name('trips.shares.destroy');
     Route::post('/trips/{trip}/bookings/import', [BookingImportController::class, 'store'])->middleware('throttle:ai-import')->name('trips.bookings.import');

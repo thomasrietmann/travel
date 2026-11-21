@@ -8,8 +8,8 @@ Einstieg: `php ops/metanet/upgrade.php`, alternativ `php artisan deployment:upgr
 
 - Ohne `--apply`: nur Bestandsprüfung und Anzeige der ausstehenden Release-Migrationen; keine Schema- oder Dokumentänderung.
 - Mit `--apply`: verlangt exakt benannte MySQL-Datenbank, `production` oder `staging` ohne Debug, vorhandenen APP_KEY, bcrypt, PHP mindestens 8.3.21 (kleiner als 9.0), InnoDB, Wartungsmodus und bestätigtes Backup/gestoppte Schreiber.
-- Erlaubt ausschliesslich die Migrationen `2026_10_24_000001_create_document_file_deletions_table`, `2026_10_24_000002_add_email_identity_security` und `2026_11_21_000001_add_deposit_amount_to_bookings_table`. Ältere noch ausstehende, fremde oder teilweise ausgeführte Migrationen führen zum Abbruch.
-- Speichert vor der ersten Änderung ein privates `upgrade-before.json` (0600). Vergleicht neun Geschäftstabellen samt ursprünglichen Spalten, Passwort-Hashes, Tokens, APP_KEY-Fingerabdruck und alle referenzierten Dokumentbytes vor/nach der Änderung. Werte der Geschäftstabellen stehen nur als HMAC im Inventar.
+- Erlaubt ausschliesslich die Migrationen `2026_10_24_000001_create_document_file_deletions_table`, `2026_10_24_000002_add_email_identity_security`, `2026_11_21_000001_add_deposit_amount_to_bookings_table` und `2026_11_21_000002_create_itinerary_stops_table`. Ältere noch ausstehende, fremde oder teilweise ausgeführte Migrationen führen zum Abbruch.
+- Speichert vor der ersten Änderung ein privates `upgrade-before.json` (0600). Vergleicht die Geschäftstabellen samt ursprünglichen Spalten, Passwort-Hashes, Tokens, APP_KEY-Fingerabdruck und alle referenzierten Dokumentbytes vor/nach der Änderung. Bei vorhandenem Tagesplan erfasst das Inventar auch `itinerary_stops`. Werte der Geschäftstabellen stehen nur als HMAC im Inventar.
 - `--copy-documents` kopiert zusätzlich geprüfte Altdateien in die private Ablage. Originale bleiben erhalten, bestehende Dokumentpfade ändern sich nicht. Widersprüchliche/fehlende Kopien führen zum Abbruch.
 - Eine Wiederholung mit **demselben Evidenzordner** verwendet unverändert das erste Inventar. Sie akzeptiert keine zwischenzeitlich veränderten Geschäftsdaten als neuen Ausgangsstand. Bereits vollständig protokollierte Migrationen werden nicht nochmals ausgeführt.
 - Eine eigene Prozesssperre und die gemeinsame Importsperre verhindern konkurrierende Upgrades/neue Importe. Sie ersetzen nicht die betriebliche Schreibpause: alte Cronprozesse, Wartungs-Bypässe, Queue und manuelle DB-Schreiber müssen separat gestoppt sein.
@@ -27,6 +27,8 @@ Technische Kompatibilität und Sicherheits-Patchstand getrennt beurteilen: die V
 Lokale Prüfung am 21.11.2026: PHP 8.3.21 und 8.3.36 bestanden jeweils die gesamte MySQL-Suite mit **78 Tests / 476 Assertions**, einschliesslich Restore und Bestandserhalt. Die Grenzen des lokalen Nachweises stehen im [README](README.md#tests-und-assets). Produktion und Metanet-Cron wurden nicht verändert.
 
 Für die Anzahlungen kommt die optionale Spalte `bookings.deposit_amount` hinzu. Bei einem neuen Upgrade einen neuen Evidenzordner für den aktuellen Bestand verwenden.
+
+Der Tagesplan benötigt die zusätzliche Tabelle `itinerary_stops` für manuell erfasste Stopps und Teilstrecken. Bestehende Buchungen erscheinen anhand ihrer gespeicherten Daten direkt im Tagesplan.
 
 ## 1. Release und aktuelle Sicherung vorbereiten
 
@@ -55,7 +57,7 @@ TC_DATABASE='EXAKTER-BESTEHENDER-PRODUKTIV-DB-NAME'
 "$TC_PHP" ops/metanet/upgrade.php --expect-database="$TC_DATABASE"
 ```
 
-Erwartet: korrekte Datenbank, genau die drei aufgeführten Migrationen (oder weniger bei bereits vollständig protokollierten Schritten), lesbare/widerspruchsfreie Dokumente. Jeder nicht erfolgreiche Exitcode bedeutet Stopp. Bei unbekannter Altinstallation zuerst den Schema- und Migrationsstand abgleichen, statt alte Migrationen pauschal nachzuholen.
+Erwartet werden die korrekte Datenbank, die noch ausstehenden der oben aufgeführten Migrationen und lesbare, widerspruchsfreie Dokumente. Jeder nicht erfolgreiche Exitcode bedeutet Stopp. Bei unbekannter Altinstallation zuerst den Schema- und Migrationsstand abgleichen, statt alte Migrationen pauschal nachzuholen.
 
 ## 3. Upgrade ausdrücklich ausführen
 

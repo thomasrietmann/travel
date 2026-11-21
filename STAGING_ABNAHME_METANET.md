@@ -46,7 +46,7 @@ Backup **nur** in `travel-at` und separate Staging-Dateiordner zurückspielen. S
 
 ## C. Backup-/Restore-Probe aus Staging
 
-Alle Schreibprozesse der **Staging-Kopie** bleiben angehalten, Zugangsschutz bleibt aktiv. Aus der unveränderten Kopie zuerst einen Vergleichsstand erfassen. Das Kommando liest neun Geschäftstabellen inklusive aller ursprünglichen Spalten, bildet keyed SHA-256 über die Zeilen und prüft die SHA-256 aller referenzierten Dokumente in sämtlichen Lesewurzeln. Fehlende oder widersprüchliche Dateien führen zu Exitcode 1. Klare Mailadressen, Passwörter, Tokens und Dokumentnamen stehen nicht im Inventar.
+Alle Schreibprozesse der **Staging-Kopie** bleiben angehalten, Zugangsschutz bleibt aktiv. Aus der unveränderten Kopie zuerst einen Vergleichsstand erfassen. Das Kommando liest die Geschäftstabellen inklusive aller ursprünglichen Spalten und berücksichtigt nach dem Tagesplan-Upgrade auch `itinerary_stops`. Es bildet keyed SHA-256 über die Zeilen und prüft die SHA-256 aller referenzierten Dokumente in sämtlichen Lesewurzeln. Fehlende oder widersprüchliche Dateien führen zu Exitcode 1. Klare Mailadressen, Passwörter, Tokens und Dokumentnamen stehen nicht im Inventar.
 
 ```bash
 umask 077

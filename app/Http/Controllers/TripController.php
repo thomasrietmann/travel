@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\TripRequest;
 use App\Models\Trip;
 use App\Services\DocumentStorage;
+use App\Services\TripItinerary;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -28,7 +29,7 @@ class TripController extends Controller
         return redirect()->route('trips.show', $trip)->with('status', 'Reise wurde erstellt.');
     }
 
-    public function show(Trip $trip): View
+    public function show(Request $request, Trip $trip, TripItinerary $itinerary): View
     {
         $this->authorize('view', $trip);
 
@@ -39,13 +40,23 @@ class TripController extends Controller
                 ->orderByRaw("case category when 'flight' then 0 when 'car' then 1 when 'hotel' then 2 else 3 end")
                 ->orderBy('title'),
             'bookings.documents',
+            'stops',
             'tasks',
             'documents.booking',
             'user',
             'sharedUsers',
         ]);
 
-        return view('trips.show', ['trip' => $trip]);
+        $flightsOnly = $request->query('plan') === 'fluege';
+        $plan = $itinerary->forTrip($trip, $flightsOnly);
+        $dates = $plan['days']->keys();
+        $requestedDay = $request->query('tag');
+        $today = today()->toDateString();
+        $openDay = $dates->containsStrict($requestedDay)
+            ? $requestedDay
+            : ($dates->first(fn ($date) => $date >= $today) ?? $dates->first());
+
+        return view('trips.show', compact('trip', 'plan', 'flightsOnly', 'openDay'));
     }
 
     public function edit(Trip $trip): View

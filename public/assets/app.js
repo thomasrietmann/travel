@@ -1,11 +1,9 @@
-document.addEventListener('DOMContentLoaded', () => {
-        const startDate = document.getElementById('start_date');
-        const endDate = document.getElementById('end_date');
-
-        startDate?.addEventListener('change', () => {
-            endDate.value = startDate.value;
-        });
+document.querySelectorAll('[data-copy-to-end-date]').forEach((startDate) => {
+    const endDate = startDate.form.elements.namedItem('end_date');
+    startDate.addEventListener('change', () => {
+        endDate.value = startDate.value;
     });
+});
 
 document.querySelectorAll('[data-mobile-menu-button]').forEach((button) => {
             const menu = document.querySelector('[data-mobile-menu]');

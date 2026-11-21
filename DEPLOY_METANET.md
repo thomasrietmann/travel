@@ -156,7 +156,7 @@ Für dieses Release bevorzugt den kontrollierten Ablauf in [UPGRADE_METANET.md](
 "$TC_PHP" artisan documents:migrate-private > "$TC_BACKUP/documents-before.txt"
 ```
 
-Die Release-Migrationen ergänzen eine Dateibereinigungs-Tabelle, eine Mutex-Zeile für Mailidentitäten, `user_email_aliases.verified_at` sowie `imported_mails.attempts` und `bookings.deposit_amount`. MySQL-DDL ist nicht als Ganzes transaktional. Bei einer Teilmigration stoppen und den Schema-/Migrationsstand prüfen; nicht blind neu starten oder zurückrollen.
+Die Release-Migrationen ergänzen eine Dateibereinigungs-Tabelle, eine Mutex-Zeile für Mailidentitäten, `user_email_aliases.verified_at`, `imported_mails.attempts`, `bookings.deposit_amount` und die Tagesplantabelle `itinerary_stops`. MySQL-DDL ist nicht als Ganzes transaktional. Bei einer Teilmigration stoppen und den Schema-/Migrationsstand prüfen; nicht blind neu starten oder zurückrollen.
 
 `documents:migrate-private` ist standardmässig eine Inventarisierung. Nur nach erfolgreichem Inventar, genügend Speicherplatz und während der Schreibpause:
 

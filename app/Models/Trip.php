@@ -97,6 +97,11 @@ class Trip extends Model
         return $this->hasMany(Booking::class);
     }
 
+    public function stops(): HasMany
+    {
+        return $this->hasMany(ItineraryStop::class);
+    }
+
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class);

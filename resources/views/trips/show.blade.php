@@ -42,13 +42,16 @@
     </div>
 
     <div class="mb-6 flex gap-2 overflow-x-auto border-b border-slate-200 text-sm font-medium">
-        <a href="#overview" class="px-3 py-2 text-slate-700 hover:text-slate-950">Uebersicht</a>
-        <a href="#bookings" class="px-3 py-2 text-slate-700 hover:text-slate-950">Buchungen</a>
+        <a href="#tagesplan" class="px-3 py-2 text-slate-700 hover:text-slate-950">Tagesplan</a>
+        <a href="{{ route('trips.show', [$trip, 'liste' => 1]) }}#bookings" class="px-3 py-2 text-slate-700 hover:text-slate-950">Buchungen</a>
+        <a href="#overview" class="px-3 py-2 text-slate-700 hover:text-slate-950">Übersicht</a>
         <a href="#payments" class="px-3 py-2 text-slate-700 hover:text-slate-950">Zahlungen</a>
         <a href="#tasks" class="px-3 py-2 text-slate-700 hover:text-slate-950">Aufgaben</a>
         <a href="#documents" class="px-3 py-2 text-slate-700 hover:text-slate-950">Dokumente</a>
         <a href="#sharing" class="px-3 py-2 text-slate-700 hover:text-slate-950">Freigaben</a>
     </div>
+
+    @include('itinerary.plan')
 
     <section id="overview" class="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -83,16 +86,15 @@
         </section>
     @endif
 
-    <section id="bookings" class="mb-8 rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div class="flex flex-col gap-3 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-                <h2 class="text-lg font-semibold">Buchungen</h2>
-                <p class="mt-1 text-sm text-slate-500">Dokument hochladen und automatisch als Buchung erfassen.</p>
-            </div>
+    <details id="bookings" class="mb-8 rounded-lg border border-slate-200 bg-white shadow-sm" @if (request()->boolean('liste') || $errors->has('booking_documents') || $errors->has('booking_documents.*')) open @endif>
+        <summary class="cursor-pointer p-5 font-semibold">Buchungsliste ({{ $trip->bookings->count() }})</summary>
+        <div class="flex flex-wrap items-center justify-between gap-3 border-y border-slate-200 p-5">
+            <h2 class="text-lg font-semibold">Buchungen</h2>
             <a href="{{ route('trips.bookings.create', $trip) }}" class="rounded-md bg-slate-950 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800">Neue Buchung</a>
         </div>
-        <div class="border-b border-slate-200 bg-slate-50 p-5">
-            <form method="POST" action="{{ route('trips.bookings.import', $trip) }}" enctype="multipart/form-data" data-booking-import-form>
+        <details class="border-b border-slate-200 bg-slate-50 p-5" @if ($errors->has('booking_documents') || $errors->has('booking_documents.*')) open @endif>
+            <summary class="cursor-pointer text-sm font-medium">Buchung aus PDF oder Bild importieren</summary>
+            <form method="POST" action="{{ route('trips.bookings.import', $trip) }}" class="mt-4" enctype="multipart/form-data" data-booking-import-form>
                 @csrf
                 <label for="booking_documents" data-booking-dropzone class="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-white px-4 py-8 text-center transition hover:border-slate-500 hover:bg-slate-50">
                     <span class="text-sm font-semibold text-slate-950">PDFs, Screenshots oder Bilder hierher ziehen</span>
@@ -107,7 +109,7 @@
                     <button class="rounded-md bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800">Mit AI erfassen</button>
                 </div>
             </form>
-        </div>
+        </details>
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-200 text-sm">
                 <thead class="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -161,7 +163,7 @@
                 </tbody>
             </table>
         </div>
-    </section>
+    </details>
 
     <section id="payments" class="mb-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <h2 class="text-lg font-semibold">Zahlungen</h2>

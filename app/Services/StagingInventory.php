@@ -17,12 +17,21 @@ class StagingInventory
         if ($key === '') {
             throw new RuntimeException('APP_KEY fehlt.');
         }
+        $tables = self::TABLES;
+        if (Schema::hasTable('itinerary_stops')) {
+            $tables[] = 'itinerary_stops';
+        }
+        if ($baseline !== null && array_keys($baseline['tables'] ?? []) === self::TABLES
+            && $tables !== self::TABLES && ! DB::table('itinerary_stops')->exists()) {
+            // A pre-itinerary inventory still matches directly after the additive migration.
+            $tables = self::TABLES;
+        }
         if ($baseline !== null && (($baseline['format'] ?? null) !== 1
-            || array_keys($baseline['tables'] ?? []) !== self::TABLES)) {
+            || array_keys($baseline['tables'] ?? []) !== $tables)) {
             throw new RuntimeException('Ungültiges Inventarformat.');
         }
         $result = ['format' => 1, 'key_fingerprint' => hash_hmac('sha256', 'tripcontrol-staging-inventory-v1', $key), 'tables' => [], 'documents' => []];
-        foreach (self::TABLES as $table) {
+        foreach ($tables as $table) {
             $available = Schema::getColumnListing($table);
             $columns = $baseline === null ? $available : ($baseline['tables'][$table]['columns'] ?? []);
             if (! is_array($columns) || $columns === [] || ! in_array('id', $columns, true)

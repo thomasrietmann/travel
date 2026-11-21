@@ -37,7 +37,7 @@
 
     <div>
         <label for="start_date" class="block text-sm font-medium text-slate-700">Startdatum</label>
-        <input id="start_date" name="start_date" type="date" value="{{ old('start_date', $trip->start_date?->format('Y-m-d')) }}" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+        <input id="start_date" name="start_date" type="date" data-copy-to-end-date value="{{ old('start_date', $trip->start_date?->format('Y-m-d')) }}" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
         @error('start_date') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
     </div>
 

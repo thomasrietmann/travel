@@ -50,7 +50,7 @@
         <div class="grid gap-5 md:grid-cols-2">
             <div>
                 <label for="start_date" class="block text-sm font-medium text-slate-700">Von</label>
-                <input id="start_date" name="start_date" type="date" value="{{ old('start_date', $booking->start_date?->format('Y-m-d')) }}" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
+                <input id="start_date" name="start_date" type="date" data-copy-to-end-date value="{{ old('start_date', $booking->start_date?->format('Y-m-d')) }}" class="mt-1 w-full rounded-md border-slate-300 shadow-sm focus:border-slate-900 focus:ring-slate-900">
                 @error('start_date') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
 
@@ -60,6 +60,15 @@
                 @error('end_date') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
             </div>
         </div>
+        @if ($booking->exists)
+            <div class="mt-4 border-t border-slate-200 pt-4 text-sm">
+                <h3 class="font-semibold">Tagesplan</h3>
+                @foreach ($booking->stops as $stop)
+                    <a href="{{ route('trips.stops.edit', [$trip, $stop]) }}" class="mt-2 block text-slate-700 hover:underline">{{ $stop->start_date->format('d.m.Y') }} · {{ $stop->title }}</a>
+                @endforeach
+                <a href="{{ route('trips.stops.create', [$trip, 'booking' => $booking->id]) }}" class="mt-2 inline-block font-medium underline">{{ $booking->category === 'flight' ? 'Teilstrecke hinzufügen' : 'Termin ergänzen' }}</a>
+            </div>
+        @endif
     </section>
 
     <section class="rounded-lg border border-slate-200 bg-white p-5">
